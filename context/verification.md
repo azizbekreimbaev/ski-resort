@@ -30,3 +30,20 @@ Artifact checks passed for all three skills, 29 local Markdown links and all 95 
 - [Nest GraphQL features](https://docs.nestjs.com/graphql/other-features): GraphQL execution context for guards.
 
 Those upstream pages can describe newer versions than this repository. Findings primarily rely on local source and installed-library probes; do not copy newer APIs without checking installed-version support.
+
+## Branding migration provenance
+
+The checks above and bundled evidence describe the historical 2026-10-03 review. Project paths and embedded branding were updated on 2026-10-04; those replacements do not constitute a new execution of the historical checks.
+
+### Migration validation (2026-10-04)
+
+Executed using temporary Node v24.19.0 with existing dependencies; no dependency update or database connection was performed.
+
+- API and batch TypeScript checks passed with --noEmit --incremental false.
+- Default API and explicit skiresort-batch Nest/webpack builds passed. Both new production entrypoints exist.
+- Isolated HTTP GET / checks passed using the actual controllers and services, with inert batch model dependencies and no scheduler or database. Responses match the SKIRESORT greetings.
+- All 86 application files match their Git versions after only approved branding/path substitutions and the two greeting assertion updates. Dependency lock entries and .env.example remain unchanged.
+- Non-fixing ESLint reports 3,214 errors and 24 warnings across 82 files, matching the historical totals. These existing issues remain outside this migration.
+- First-party content scan, including generated output, finds only the two intentionally retained database example names. Git whitespace checks passed.
+- Full database-backed e2e suites and live production startup were not run.
+- Final path/content audit includes ignored uploads: six local database-export filenames were renamed to SkiResort with identical SHA-256 contents. No old-name file/directory paths remain outside Git internals and third-party dependencies. All 95 manifest targets and 13 current local Markdown links validate.

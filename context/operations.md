@@ -20,18 +20,18 @@ npm ci
 npm run start:dev
 npm run start:dev:batch
 npm run build
-npx nest build nestar-batch
+npx nest build skiresort-batch
 ```
 
-These are setup/build instructions, not all executed during review. Default Nest project is `nestar` (API), not `nestar-api`. Two processes need distinct ports. Set NODE_ENV explicitly for batch production. `start:prod` runs cross-env then dist/apps/nestar-api/main; `start:prod:batch` runs dist/apps/nestar-batch/main directly. Verify build output presence after each build because root deleteOutDir is enabled. A production install omitting devDependencies will not have cross-env for the API production script.
+These are setup/build instructions, not all executed during review. Default Nest project is `skiresort` (API), not `skiresort-api`. Two processes need distinct ports. Set NODE_ENV explicitly for batch production. `start:prod` runs cross-env then dist/apps/skiresort-api/main; `start:prod:batch` runs dist/apps/skiresort-batch/main directly. Verify build output presence after each build because root deleteOutDir is enabled. A production install omitting devDependencies will not have cross-env for the API production script.
 
 Uploads resolve relative to process working directory. Existing target directories must exist; uploader does not create them. Local ephemeral storage or multiple API replicas require a persistence/shared-storage strategy. No Docker/process-manager/CI/deployment configuration was found.
 
 ## Non-mutating checks
 
 ```sh
-node node_modules/typescript/bin/tsc -p apps/nestar-api/tsconfig.app.json --noEmit --incremental false
-node node_modules/typescript/bin/tsc -p apps/nestar-batch/tsconfig.app.json --noEmit --incremental false
+node node_modules/typescript/bin/tsc -p apps/skiresort-api/tsconfig.app.json --noEmit --incremental false
+node node_modules/typescript/bin/tsc -p apps/skiresort-batch/tsconfig.app.json --noEmit --incremental false
 node node_modules/eslint/bin/eslint.js "apps/**/*.ts"
 node node_modules/jest/bin/jest.js --listTests --runInBand
 ```

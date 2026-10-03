@@ -16,13 +16,13 @@ Exact versions and declared ranges are in dependencies.md. These are local obser
 ## Tree and ownership
 
 ```text
-nestar/
+skiresort/
   package.json / package-lock.json  one dependency graph and script set
   nest-cli.json                    two Nest application projects
   tsconfig*.json                   root compiler configuration
   eslint.config.mjs / .prettierrc  typed lint and formatting policy
   apps/
-    nestar-api/
+    skiresort-api/
       src/
         main.ts                   HTTP bootstrap, pipes, uploads, WebSocket adapter
         app.*                     root HTTP/GraphQL endpoints and imports
@@ -45,7 +45,7 @@ nestar/
         schemas/                  nine Mongoose schema definitions
         socket/                   public broadcast gateway
       test/                       separate e2e config/test
-    nestar-batch/
+    skiresort-batch/
       src/
         batch.controller.ts       cron triggers and root HTTP handler
         batch.service.ts          Mongo rank calculations
@@ -57,7 +57,7 @@ nestar/
   dist/                           ignored build output
 ```
 
-The API Nest project key is `nestar`, even though its directory is `nestar-api`; the batch key is `nestar-batch`. `nest build` targets the default API. Root `libs/`, package workspaces, Docker manifests, CI configuration, deployment manifests and existing project skills/context/AGENTS were not found in the reviewed file set.
+The API Nest project key is `skiresort`, even though its directory is `skiresort-api`; the batch key is `skiresort-batch`. `nest build` targets the default API. Root `libs/`, package workspaces, Docker manifests, CI configuration, deployment manifests and existing project skills/context/AGENTS were not found in the reviewed file set.
 
 ## Request and dependency flow
 

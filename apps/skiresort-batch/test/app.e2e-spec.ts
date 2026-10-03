@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import * as request from 'supertest';
+import { BatchModule } from '../src/batch.module';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('SkiResortBatchController (e2e)', () => {
+  let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [BatchModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -20,10 +19,6 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
-  });
-
-  afterEach(async () => {
-    await app.close();
+      .expect('Welcome to SKIRESORT BATCH  server!');
   });
 });

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Property } from '../../nestar-api/src/libs/dto/property/property';
+import { Property } from '../../skiresort-api/src/libs/dto/property/property';
 import { Model } from 'mongoose'
-import { Member } from '../../nestar-api/src/libs/dto/member/member';
-import { MemberStatus, MemberType } from '../../nestar-api/src/libs/enums/member.enum';
-import { PropertyStatus } from '../../nestar-api/src/libs/enums/property.enum';
+import { Member } from '../../skiresort-api/src/libs/dto/member/member';
+import { MemberStatus, MemberType } from '../../skiresort-api/src/libs/enums/member.enum';
+import { PropertyStatus } from '../../skiresort-api/src/libs/enums/property.enum';
 @Injectable()
 export class BatchService {
   constructor(
@@ -68,6 +68,6 @@ export class BatchService {
 
 
   getHello(): string {
-    return 'Welcome to NESTAR BATCH  server!';
+    return 'Welcome to SKIRESORT BATCH  server!';
   }
 }

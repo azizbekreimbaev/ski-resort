@@ -4,7 +4,7 @@ Generated from the reviewed TypeScript declarations. Decorators determine GraphQ
 
 ## BoardArticleInput
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:8
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.input.ts`:8
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -16,7 +16,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:8
 
 ## BAISearch
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:31
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.input.ts`:31
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -26,7 +26,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:31
 
 ## BoardArticlesInquiry
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:46
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.input.ts`:46
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -38,7 +38,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:46
 
 ## ABAISearch
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:72
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.input.ts`:72
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -47,7 +47,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:72
 
 ## AllBoardArticlesInquiry
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:83
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.input.ts`:83
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -59,7 +59,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.input.ts`:83
 
 ## BoardArticle
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.ts`:7
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.ts`:7
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -80,7 +80,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.ts`:7
 
 ## BoardArticles
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.ts`:56
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.ts`:56
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -89,7 +89,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.ts`:56
 
 ## BoardArticleUpdate
 
-Source: `apps/nestar-api/src/libs/dto/board-article/board-article.update.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/board-article/board-article.update.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -101,7 +101,7 @@ Source: `apps/nestar-api/src/libs/dto/board-article/board-article.update.ts`:6
 
 ## CommentInput
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:8
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.input.ts`:8
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -112,7 +112,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:8
 
 ## CISearch
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:26
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.input.ts`:26
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -120,7 +120,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:26
 
 ## CommentsInquiry
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:33
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.input.ts`:33
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -132,7 +132,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.input.ts`:33
 
 ## Comment
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -148,7 +148,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.ts`:6
 
 ## Comments
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.ts`:38
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.ts`:38
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -157,7 +157,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.ts`:38
 
 ## CommentUpdate
 
-Source: `apps/nestar-api/src/libs/dto/comment/comment.update.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/comment/comment.update.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -167,7 +167,7 @@ Source: `apps/nestar-api/src/libs/dto/comment/comment.update.ts`:6
 
 ## FollowSearch
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.input.ts`:5
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.input.ts`:5
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -176,7 +176,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.input.ts`:5
 
 ## FollowInquiry
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.input.ts`:16
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.input.ts`:16
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -186,7 +186,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.input.ts`:16
 
 ## MeFollowed
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -196,7 +196,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:6
 
 ## Follower
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:18
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.ts`:18
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -211,7 +211,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:18
 
 ## Following
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:47
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.ts`:47
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -226,7 +226,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:47
 
 ## Followings
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:76
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.ts`:76
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -235,7 +235,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:76
 
 ## Followers
 
-Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:85
+Source: `apps/skiresort-api/src/libs/dto/follow/follow.ts`:85
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -244,7 +244,7 @@ Source: `apps/nestar-api/src/libs/dto/follow/follow.ts`:85
 
 ## LikeInput
 
-Source: `apps/nestar-api/src/libs/dto/like/like.input.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/like/like.input.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -254,7 +254,7 @@ Source: `apps/nestar-api/src/libs/dto/like/like.input.ts`:6
 
 ## MeLiked
 
-Source: `apps/nestar-api/src/libs/dto/like/like.ts`:5
+Source: `apps/skiresort-api/src/libs/dto/like/like.ts`:5
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -264,7 +264,7 @@ Source: `apps/nestar-api/src/libs/dto/like/like.ts`:5
 
 ## Like
 
-Source: `apps/nestar-api/src/libs/dto/like/like.ts`:17
+Source: `apps/skiresort-api/src/libs/dto/like/like.ts`:17
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -277,7 +277,7 @@ Source: `apps/nestar-api/src/libs/dto/like/like.ts`:17
 
 ## MemberInput
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:8
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:8
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -289,7 +289,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:8
 
 ## LoginInput
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:34
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:34
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -298,7 +298,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:34
 
 ## AISearch
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:47
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:47
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -306,7 +306,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:47
 
 ## AgentsInquiry
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:55
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:55
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -318,7 +318,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:55
 
 ## MISearch
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:82
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:82
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -328,7 +328,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:82
 
 ## MembersInquiry
 
-Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:99
+Source: `apps/skiresort-api/src/libs/dto/member/member.input.ts`:99
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -340,7 +340,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.input.ts`:99
 
 ## Member
 
-Source: `apps/nestar-api/src/libs/dto/member/member.ts`:8
+Source: `apps/skiresort-api/src/libs/dto/member/member.ts`:8
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -375,7 +375,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.ts`:8
 
 ## TotalCounter
 
-Source: `apps/nestar-api/src/libs/dto/member/member.ts`:100
+Source: `apps/skiresort-api/src/libs/dto/member/member.ts`:100
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -383,7 +383,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.ts`:100
 
 ## Members
 
-Source: `apps/nestar-api/src/libs/dto/member/member.ts`:107
+Source: `apps/skiresort-api/src/libs/dto/member/member.ts`:107
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -392,7 +392,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.ts`:107
 
 ## MemberUpdate
 
-Source: `apps/nestar-api/src/libs/dto/member/member.update.ts`:5
+Source: `apps/skiresort-api/src/libs/dto/member/member.update.ts`:5
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -410,7 +410,7 @@ Source: `apps/nestar-api/src/libs/dto/member/member.update.ts`:5
 
 ## PropertyInput
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:9
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:9
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -431,7 +431,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:9
 
 ## PricesRange
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:78
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:78
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -440,7 +440,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:78
 
 ## SquaresRange
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:88
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:88
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -449,7 +449,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:88
 
 ## PeriodsRange
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:98
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:98
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -458,7 +458,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:98
 
 ## PISearch
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:107
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:107
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -475,7 +475,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:107
 
 ## PropertiesInquiry
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:162
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:162
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -487,7 +487,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:162
 
 ## APISearch
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:193
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:193
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -495,7 +495,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:193
 
 ## AgentPropertiesInquiry
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:201
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:201
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -507,7 +507,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:201
 
 ## ALPISearch
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:228
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:228
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -516,7 +516,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:228
 
 ## AllPropertiesInquiry
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:239
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:239
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -528,7 +528,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:239
 
 ## OrdinaryInquiry
 
-Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:265
+Source: `apps/skiresort-api/src/libs/dto/property/property.input.ts`:265
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -537,7 +537,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.input.ts`:265
 
 ## Property
 
-Source: `apps/nestar-api/src/libs/dto/property/property.ts`:8
+Source: `apps/skiresort-api/src/libs/dto/property/property.ts`:8
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -570,7 +570,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.ts`:8
 
 ## Properties
 
-Source: `apps/nestar-api/src/libs/dto/property/property.ts`:108
+Source: `apps/skiresort-api/src/libs/dto/property/property.ts`:108
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -579,7 +579,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.ts`:108
 
 ## PropertyUpdate
 
-Source: `apps/nestar-api/src/libs/dto/property/property.update.ts`:17
+Source: `apps/skiresort-api/src/libs/dto/property/property.update.ts`:17
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -603,7 +603,7 @@ Source: `apps/nestar-api/src/libs/dto/property/property.update.ts`:17
 
 ## ViewInput
 
-Source: `apps/nestar-api/src/libs/dto/view/view.input.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/view/view.input.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -613,7 +613,7 @@ Source: `apps/nestar-api/src/libs/dto/view/view.input.ts`:6
 
 ## View
 
-Source: `apps/nestar-api/src/libs/dto/view/view.ts`:6
+Source: `apps/skiresort-api/src/libs/dto/view/view.ts`:6
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -627,7 +627,7 @@ Source: `apps/nestar-api/src/libs/dto/view/view.ts`:6
 
 ## BoardArticleCategory
 
-Source: `apps/nestar-api/src/libs/enums/board-article.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/board-article.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -638,7 +638,7 @@ Source: `apps/nestar-api/src/libs/enums/board-article.enum.ts`:3
 
 ## BoardArticleStatus
 
-Source: `apps/nestar-api/src/libs/enums/board-article.enum.ts`:13
+Source: `apps/skiresort-api/src/libs/enums/board-article.enum.ts`:13
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -647,7 +647,7 @@ Source: `apps/nestar-api/src/libs/enums/board-article.enum.ts`:13
 
 ## CommentStatus
 
-Source: `apps/nestar-api/src/libs/enums/comment.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/comment.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -656,7 +656,7 @@ Source: `apps/nestar-api/src/libs/enums/comment.enum.ts`:3
 
 ## CommentGroup
 
-Source: `apps/nestar-api/src/libs/enums/comment.enum.ts`:11
+Source: `apps/skiresort-api/src/libs/enums/comment.enum.ts`:11
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -666,7 +666,7 @@ Source: `apps/nestar-api/src/libs/enums/comment.enum.ts`:11
 
 ## Message
 
-Source: `apps/nestar-api/src/libs/enums/common.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/common.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -690,7 +690,7 @@ Source: `apps/nestar-api/src/libs/enums/common.enum.ts`:3
 
 ## Direction
 
-Source: `apps/nestar-api/src/libs/enums/common.enum.ts`:25
+Source: `apps/skiresort-api/src/libs/enums/common.enum.ts`:25
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -699,7 +699,7 @@ Source: `apps/nestar-api/src/libs/enums/common.enum.ts`:25
 
 ## LikeGroup
 
-Source: `apps/nestar-api/src/libs/enums/like.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/like.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -709,7 +709,7 @@ Source: `apps/nestar-api/src/libs/enums/like.enum.ts`:3
 
 ## MemberType
 
-Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/member.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -719,7 +719,7 @@ Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:3
 
 ## MemberStatus
 
-Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:11
+Source: `apps/skiresort-api/src/libs/enums/member.enum.ts`:11
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -729,7 +729,7 @@ Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:11
 
 ## MemberAuthType
 
-Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:19
+Source: `apps/skiresort-api/src/libs/enums/member.enum.ts`:19
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -739,7 +739,7 @@ Source: `apps/nestar-api/src/libs/enums/member.enum.ts`:19
 
 ## NoticeCategory
 
-Source: `apps/nestar-api/src/libs/enums/notice.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/notice.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -749,7 +749,7 @@ Source: `apps/nestar-api/src/libs/enums/notice.enum.ts`:3
 
 ## NoticeStatus
 
-Source: `apps/nestar-api/src/libs/enums/notice.enum.ts`:12
+Source: `apps/skiresort-api/src/libs/enums/notice.enum.ts`:12
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -759,7 +759,7 @@ Source: `apps/nestar-api/src/libs/enums/notice.enum.ts`:12
 
 ## NotificationType
 
-Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/notification.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -768,7 +768,7 @@ Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:3
 
 ## NotificationStatus
 
-Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:11
+Source: `apps/skiresort-api/src/libs/enums/notification.enum.ts`:11
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -777,7 +777,7 @@ Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:11
 
 ## NotificationGroup
 
-Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:19
+Source: `apps/skiresort-api/src/libs/enums/notification.enum.ts`:19
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -787,7 +787,7 @@ Source: `apps/nestar-api/src/libs/enums/notification.enum.ts`:19
 
 ## PropertyType
 
-Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/property.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -797,7 +797,7 @@ Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:3
 
 ## PropertyStatus
 
-Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:12
+Source: `apps/skiresort-api/src/libs/enums/property.enum.ts`:12
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -807,7 +807,7 @@ Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:12
 
 ## PropertyLocation
 
-Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:21
+Source: `apps/skiresort-api/src/libs/enums/property.enum.ts`:21
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|
@@ -823,7 +823,7 @@ Source: `apps/nestar-api/src/libs/enums/property.enum.ts`:21
 
 ## ViewGroup
 
-Source: `apps/nestar-api/src/libs/enums/view.enum.ts`:3
+Source: `apps/skiresort-api/src/libs/enums/view.enum.ts`:3
 
 | Field / value | Type / value | Decorators | Line |
 |---|---|---|---|

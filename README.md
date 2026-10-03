@@ -1,3 +1,7 @@
+# SkiResort
+
+SkiResort is a NestJS backend monorepo with API and scheduled batch applications.
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
@@ -23,7 +27,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+SkiResort uses the [NestJS](https://github.com/nestjs/nest) framework. The default project is `skiresort`, located in `apps/skiresort-api`; the batch project is `skiresort-batch`, located in `apps/skiresort-batch`.
 
 ## Project setup
 
@@ -43,6 +47,19 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+
+## Batch application
+
+Build both applications before using their production scripts:
+
+```bash
+npm run build
+npm run build -- skiresort-batch
+npm run start:dev:batch
+npm run start:prod:batch
+```
+
+Copy .env.example to .env and configure database connections and secrets. Database example names are intentionally retained; this branding migration does not move or rename databases.
 
 ## Run tests
 
