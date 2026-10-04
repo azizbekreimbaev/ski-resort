@@ -9,6 +9,7 @@ import {
 import { ResortUpdate } from '../../libs/dto/resort/resort.update';
 import {
   ResortFacilities,
+  ResortLevel,
   ResortLocation,
   ResortStatus,
 } from '../../libs/enums/resort.enum';
@@ -36,6 +37,7 @@ describe('ResortService', () => {
     aggregate: jest.Mock<any, [unknown[]]>;
     findOne: jest.Mock<any, unknown[]>;
     findById: jest.Mock<any, unknown[]>;
+    findOneAndDelete: jest.Mock<any, unknown[]>;
     findOneAndUpdate: jest.Mock<
       any,
       [
@@ -86,6 +88,9 @@ describe('ResortService', () => {
       aggregate: jest.fn<any, [unknown[]]>().mockReturnValue(query([resort])),
       findOne: jest.fn<any, unknown[]>().mockReturnValue(query(resort)),
       findById: jest.fn<any, unknown[]>().mockReturnValue(query(resort)),
+      findOneAndDelete: jest
+        .fn<any, unknown[]>()
+        .mockReturnValue(query(resort)),
       findOneAndUpdate: jest
         .fn<
           any,
@@ -160,6 +165,7 @@ describe('ResortService', () => {
         resortTitle: resort.resortTitle,
         resortLocation: resort.resortLocation,
         resortAddress: resort.resortAddress,
+        resortLevel: null,
       });
     },
   );
@@ -179,6 +185,7 @@ describe('ResortService', () => {
       resortTitle: 'Snow Resort',
       resortLocation: ResortLocation.PYEONGCHANG,
       resortAddress: 'Mountain ROAD',
+      resortLevel: null,
     });
     expect(existenceQuery.collation).toHaveBeenCalledWith({
       locale: 'en',
@@ -202,9 +209,73 @@ describe('ResortService', () => {
         resortImages: [],
       }),
     ).rejects.toThrow(
-      'A resort with this title, location and address already exists',
+      'A resort with this title, location, address and level already exists',
     );
   });
+
+  it.each([
+    ResortLevel.BEGINNER,
+    ResortLevel.INTERMEDIATE,
+    ResortLevel.ADVANCED,
+    ResortLevel.MIXED,
+  ])(
+    'includes %s in duplicate matching and persisted identity',
+    async (level) => {
+      model.exists.mockImplementation((identity) =>
+        query(
+          identity.resortLevel === ResortLevel.BEGINNER
+            ? { _id: resortId }
+            : null,
+        ),
+      );
+      const input: ResortInput = {
+        resortTitle: resort.resortTitle,
+        resortLocation: resort.resortLocation,
+        resortAddress: resort.resortAddress,
+        resortLevel: level,
+        resortPricePerDay: 50,
+        resortMinDays: 2,
+        resortImages: [],
+      };
+      if (level === ResortLevel.BEGINNER) {
+        await expect(
+          service.createResort(adminId, input),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(model.create).not.toHaveBeenCalled();
+      } else {
+        expect(await service.createResort(adminId, input)).toMatchObject({
+          resortLevel: level,
+        });
+      }
+      expect(model.exists).toHaveBeenCalledWith({
+        resortTitle: resort.resortTitle,
+        resortLocation: resort.resortLocation,
+        resortAddress: resort.resortAddress,
+        resortLevel: level,
+      });
+    },
+  );
+
+  it.each([undefined, null])(
+    'matches an existing unspecified level for input level %s',
+    async (level) => {
+      model.exists.mockImplementation((identity) =>
+        query(identity.resortLevel === null ? { _id: resortId } : null),
+      );
+      await expect(
+        service.createResort(adminId, {
+          resortTitle: resort.resortTitle,
+          resortLocation: resort.resortLocation,
+          resortAddress: resort.resortAddress,
+          resortLevel: level,
+          resortPricePerDay: 50,
+          resortMinDays: 2,
+          resortImages: [],
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(model.create).not.toHaveBeenCalled();
+    },
+  );
 
   it('preserves unrelated persistence failures', async () => {
     const failure = new Error('database unavailable');
@@ -441,69 +512,58 @@ describe('ResortService', () => {
     expect(pipeline[0].$match.resortStatus).toBe(ResortStatus.DELETE);
   });
 
-  it('soft deletes with a persisted timestamp and update validators', async () => {
-    await service.removeResortByAdmin(resortId);
-    const [, update, options] = model.findOneAndUpdate.mock.calls[0];
-    const values = update.$set as Record<string, unknown>;
-    expect(values.resortStatus).toBe(ResortStatus.DELETE);
-    expect(values.deletedAt).toBeInstanceOf(Date);
-    expect(options.runValidators).toBe(true);
+  it('permanently removes the resort with a separate delete operation', async () => {
+    expect(await service.removeResortByAdmin(resortId)).toBe(resort);
+    expect(model.findOneAndDelete).toHaveBeenCalledWith({ _id: resortId });
+    expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(model.findById).not.toHaveBeenCalled();
   });
 
-  it('preserves the first deletion timestamp on repeated deletion', async () => {
-    const deletedAt = new Date('2026-01-01');
-    model.findById.mockReturnValue(
-      query({ ...resort, resortStatus: ResortStatus.DELETE, deletedAt }),
-    );
-    model.findOneAndUpdate.mockReturnValue(
-      query({ ...resort, resortStatus: ResortStatus.DELETE, deletedAt }),
-    );
-    const result = await service.removeResortByAdmin(resortId);
-    expect(result.deletedAt).toEqual(deletedAt);
-    expect(model.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty(
-      'deletedAt',
+  it('rejects removal of a missing or already removed resort', async () => {
+    model.findOneAndDelete.mockReturnValue(query(null));
+    await expect(service.removeResortByAdmin(resortId)).rejects.toBeInstanceOf(
+      NotFoundException,
     );
   });
 
-  it('clears deletedAt on restoration while ignoring spoofed immutable fields', async () => {
-    model.findById.mockReturnValue(
-      query({
-        ...resort,
-        resortStatus: ResortStatus.DELETE,
-        deletedAt: new Date(),
-      }),
-    );
+  it('updates only supplied allowed fields without reading status or managing deletedAt', async () => {
     await service.updateResortByAdmin({
-      _id: resortId.toString(),
+      _id: resortId,
       resortStatus: ResortStatus.ACTIVE,
       resortDesc: null,
       memberId: new Types.ObjectId(),
       resortLikes: 200,
       createdAt: new Date(),
+      deletedAt: new Date(),
     } as unknown as ResortUpdate);
-    const update = model.findOneAndUpdate.mock.calls[0][1];
-    expect(update).toEqual({
-      $set: { resortStatus: ResortStatus.ACTIVE, resortDesc: null },
-      $unset: { deletedAt: 1 },
+    expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: resortId },
+      { $set: { resortStatus: ResortStatus.ACTIVE, resortDesc: null } },
+      { new: true, runValidators: true },
+    );
+    expect(model.findById).not.toHaveBeenCalled();
+    expect(model.findOneAndDelete).not.toHaveBeenCalled();
+  });
+
+  it('keeps status unchanged when only content is supplied', async () => {
+    await service.updateResortByAdmin({
+      _id: resortId,
+      resortTitle: 'New title',
+    });
+    expect(model.findOneAndUpdate.mock.calls[0][1]).toEqual({
+      $set: { resortTitle: 'New title' },
     });
   });
 
-  it('retries a concurrent deletion without resetting the winning timestamp', async () => {
-    model.findById.mockReturnValueOnce(query(resort)).mockReturnValueOnce(
-      query({
-        ...resort,
+  it('rejects updating a missing resort without retrying', async () => {
+    model.findOneAndUpdate.mockReturnValue(query(null));
+    await expect(
+      service.updateResortByAdmin({
+        _id: resortId,
         resortStatus: ResortStatus.DELETE,
-        deletedAt: new Date('2026-01-01'),
       }),
-    );
-    model.findOneAndUpdate
-      .mockReturnValueOnce(query(null))
-      .mockReturnValueOnce(query(resort));
-    await service.removeResortByAdmin(resortId);
-    expect(model.findOneAndUpdate).toHaveBeenCalledTimes(2);
-    expect(model.findOneAndUpdate.mock.calls[1][1].$set).not.toHaveProperty(
-      'deletedAt',
-    );
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(model.findOneAndUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('keeps counter decrements nonnegative and rejects missing counter targets', async () => {

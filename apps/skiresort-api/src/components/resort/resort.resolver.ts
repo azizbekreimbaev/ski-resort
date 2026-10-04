@@ -1,7 +1,10 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import type { Types } from 'mongoose';
-import { validateMongoObjectId } from '../../libs/config';
+import {
+  shapeIntoMongoObjectId,
+  validateMongoObjectId,
+} from '../../libs/config';
 import { Resort, Resorts } from '../../libs/dto/resort/resort';
 import {
   AllResortsInquiry,
@@ -20,7 +23,7 @@ import { ResortService } from './resort.service';
 
 @Resolver()
 export class ResortResolver {
-  constructor(private readonly resortService: ResortService) {}
+  constructor(private readonly resortService: ResortService) { }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
@@ -66,6 +69,7 @@ export class ResortResolver {
   @UseGuards(RolesGuard)
   @Mutation(() => Resort)
   updateResortByAdmin(@Args('input') input: ResortUpdate): Promise<Resort> {
+    input._id = shapeIntoMongoObjectId(input._id) as Types.ObjectId;
     return this.resortService.updateResortByAdmin(input);
   }
 
@@ -93,7 +97,7 @@ export class ResortResolver {
   @UseGuards(AuthGuard)
   @Query(() => Resorts)
   getFavoriteResorts(
-    @Args('input') input: ResortHistoryInquiry,
+    @Args('input') input: ResortsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resorts> {
     return this.resortService.getFavoriteResorts(memberId, input);
@@ -102,7 +106,7 @@ export class ResortResolver {
   @UseGuards(AuthGuard)
   @Query(() => Resorts)
   getVisitedResorts(
-    @Args('input') input: ResortHistoryInquiry,
+    @Args('input') input: ResortsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resorts> {
     return this.resortService.getVisitedResorts(memberId, input);

@@ -9,6 +9,7 @@ import {
   GraphQLEnumType,
   GraphQLInputObjectType,
   GraphQLObjectType,
+  graphql,
 } from 'graphql';
 import type { GraphQLSchema } from 'graphql';
 import { ResortResolver } from './resort.resolver';
@@ -61,6 +62,48 @@ describe('Resort generated GraphQL schema', () => {
     expect(queries?.getResort.args[0].name).toBe('resortId');
     expect(queries?.getResort.args[0].type.toString()).toBe('String!');
     expect(queries?.getResorts.type.toString()).toBe('Resorts!');
+  });
+
+  it('requires an update object containing _id, rather than an ID string as input', async () => {
+    const source = `mutation UpdateResort($input: ResortUpdate!) {
+      updateResortByAdmin(input: $input) { _id }
+    }`;
+    const updateField = schema
+      .getMutationType()!
+      .getFields().updateResortByAdmin;
+    const originalResolve = updateField.resolve;
+    const resolve = jest.fn(
+      (_source: unknown, args: { input: { _id: string } }) => ({
+        _id: args.input._id,
+      }),
+    );
+    updateField.resolve = resolve;
+    try {
+      const invalid = await graphql({
+        schema,
+        source,
+        variableValues: { input: '6ac1c176c0a836d7637ea8df' },
+      });
+      expect(invalid.errors?.[0].message).toContain(
+        'Expected type "ResortUpdate" to be an object',
+      );
+      expect(resolve).not.toHaveBeenCalled();
+
+      const valid = await graphql({
+        schema,
+        source,
+        variableValues: {
+          input: { _id: '6ac1c176c0a836d7637ea8df', resortStatus: 'SOLD_OUT' },
+        },
+      });
+      expect(valid.errors).toBeUndefined();
+      expect(resolve).toHaveBeenCalledTimes(1);
+      expect(valid.data?.updateResortByAdmin).toEqual({
+        _id: '6ac1c176c0a836d7637ea8df',
+      });
+    } finally {
+      updateField.resolve = originalResolve;
+    }
   });
 
   it('matches resort field types and nullability', () => {

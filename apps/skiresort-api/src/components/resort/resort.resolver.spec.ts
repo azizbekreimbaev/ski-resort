@@ -1,9 +1,12 @@
 import 'reflect-metadata';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 import { Types } from 'mongoose';
-import { validateMongoObjectId } from '../../libs/config';
 import { MemberType } from '../../libs/enums/member.enum';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -11,9 +14,11 @@ import { WithoutGuard } from '../auth/guards/without.guard';
 import { ResortResolver } from './resort.resolver';
 import type { ResortService } from './resort.service';
 import { ResortInput } from '../../libs/dto/resort/resort.input';
+import { ResortUpdate } from '../../libs/dto/resort/resort.update';
+import { ResortStatus } from '../../libs/enums/resort.enum';
 import type { AuthService } from '../auth/auth.service';
 
-jest.mock('../../libs/config', () => ({ validateMongoObjectId: jest.fn() }));
+jest.mock('uuid', () => ({ v4: () => 'fixture-image-id' }));
 jest.mock('./resort.service', () => ({ ResortService: class {} }));
 
 const methodMetadata = (key: string, method: keyof ResortResolver): unknown => {
@@ -65,13 +70,60 @@ describe('Resort GraphQL access', () => {
     const service = { getResort: jest.fn().mockResolvedValue({}) };
     const resolver = new ResortResolver(service as unknown as ResortService);
     const resortId = new Types.ObjectId();
-    jest.mocked(validateMongoObjectId).mockReturnValue(resortId);
 
     await resolver.getResort(resortId.toHexString(), null);
 
-    expect(validateMongoObjectId).toHaveBeenCalledWith(resortId.toHexString());
     expect(service.getResort).toHaveBeenCalledWith(null, resortId);
   });
+
+  it('converts the update input ID in the resolver before calling the service', async () => {
+    const service = { updateResortByAdmin: jest.fn().mockResolvedValue({}) };
+    const resolver = new ResortResolver(service as unknown as ResortService);
+    const input: ResortUpdate = {
+      _id: '6ac1c176c0a836d7637ea8df',
+      resortStatus: ResortStatus.SOLD_OUT,
+    };
+
+    await resolver.updateResortByAdmin(input);
+
+    expect(input._id).toBeInstanceOf(Types.ObjectId);
+    expect(input._id.toString()).toBe('6ac1c176c0a836d7637ea8df');
+    expect(service.updateResortByAdmin).toHaveBeenCalledWith(input);
+  });
+
+  it('rejects a malformed update ID through the existing global validation pipe', async () => {
+    const pipe = new ValidationPipe();
+    await expect(
+      pipe.transform(
+        { _id: 'invalid' },
+        { type: 'body', metatype: ResortUpdate },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it.each(['getResort', 'removeResortByAdmin', 'likeTargetResort'] as const)(
+    'rejects invalid IDs before %s service work',
+    (method) => {
+      const service = {
+        getResort: jest.fn(),
+        removeResortByAdmin: jest.fn(),
+        likeTargetResort: jest.fn(),
+        updateResortByAdmin: jest.fn(),
+      };
+      const resolver = new ResortResolver(service as unknown as ResortService);
+
+      expect(() => {
+        if (method === 'getResort') {
+          void resolver.getResort('invalid', null);
+        } else if (method === 'likeTargetResort') {
+          void resolver.likeTargetResort('invalid', new Types.ObjectId());
+        } else {
+          void resolver.removeResortByAdmin('invalid');
+        }
+      }).toThrow(BadRequestException);
+      expect(service[method]).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('Resort requests through the existing guards', () => {

@@ -1,5 +1,6 @@
 import { Field, Float, InputType, Int } from '@nestjs/graphql';
 import { Transform } from 'class-transformer';
+import type { Types } from 'mongoose';
 import {
   IsArray,
   IsEnum,
@@ -26,7 +27,7 @@ const trimString = ({ value }: { value: unknown }) =>
 export class ResortUpdate {
   @IsMongoId()
   @Field(() => String)
-  _id!: string;
+  _id!: string | Types.ObjectId;
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsEnum(ResortStatus)

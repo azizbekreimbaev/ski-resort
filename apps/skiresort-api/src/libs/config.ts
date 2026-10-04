@@ -33,7 +33,7 @@ export const validateMongoObjectId = (value: unknown): Types.ObjectId => {
   if (typeof value !== 'string' || !/^[a-f\d]{24}$/i.test(value)) {
     throw new BadRequestException('Invalid MongoDB ObjectId');
   }
-  return new Types.ObjectId(value);
+  return shapeIntoMongoObjectId(value) as Types.ObjectId;
 };
 
 

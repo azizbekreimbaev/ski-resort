@@ -17,11 +17,11 @@ const validResort = {
 };
 
 describe('Resort persistence contract', () => {
-  it('enforces global case-insensitive uniqueness on location, title and address', () => {
+  it('enforces global case-insensitive uniqueness on location, title, address and level', () => {
     expect(ResortSchema.indexes()).toContainEqual([
-      { resortLocation: 1, resortTitle: 1, resortAddress: 1 },
+      { resortLocation: 1, resortTitle: 1, resortAddress: 1, resortLevel: 1 },
       expect.objectContaining({
-        name: 'unique_resort_identity',
+        name: 'unique_resort_identity_with_level',
         unique: true,
         collation: { locale: 'en', strength: 2 },
       }),

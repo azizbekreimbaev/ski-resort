@@ -72,7 +72,7 @@ export class ResortService {
     @InjectModel('Resort') private readonly resortModel: Model<Resort>,
     private readonly likeService: LikeService,
     private readonly viewService: ViewService,
-  ) {}
+  ) { }
 
   public async createResort(
     memberId: MongoId,
@@ -82,6 +82,7 @@ export class ResortService {
       resortTitle: input.resortTitle.trim(),
       resortLocation: input.resortLocation,
       resortAddress: input.resortAddress.trim(),
+      resortLevel: input.resortLevel ?? null,
     };
     const duplicate = await this.resortModel
       .exists(identity)
@@ -174,57 +175,33 @@ export class ResortService {
   }
 
   public async updateResortByAdmin(input: ResortUpdate): Promise<Resort> {
-    const _id = validateMongoObjectId(input._id);
-    // Compare status to avoid overwriting the first deletion timestamp when
-    // multiple admins delete concurrently. Content edits remain last-write-wins.
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const current = await this.resortModel
-        .findById(_id)
+    const values = this.pickContent(input);
+    if (input.resortStatus !== undefined)
+      values.resortStatus = input.resortStatus;
+    try {
+      const resort = await this.resortModel
+        .findOneAndUpdate(
+          { _id: input._id },
+          { $set: values },
+          { new: true, runValidators: true },
+        )
         .lean<Resort>()
         .exec();
-      if (!current) throw new NotFoundException('Resort not found');
-
-      const values = this.pickContent(input);
-      const status = input.resortStatus ?? current.resortStatus;
-      const update: Record<string, unknown> = {
-        $set: { ...values, resortStatus: status },
-      };
-      if (
-        status === ResortStatus.DELETE &&
-        current.resortStatus !== ResortStatus.DELETE
-      ) {
-        (update.$set as Record<string, unknown>).deletedAt = new Date();
-      } else if (status !== ResortStatus.DELETE) {
-        update.$unset = { deletedAt: 1 };
-      }
-
-      let result: Resort | null;
-      try {
-        result = await this.resortModel
-          .findOneAndUpdate(
-            { _id, resortStatus: current.resortStatus },
-            update,
-            {
-              new: true,
-              runValidators: true,
-            },
-          )
-          .lean<Resort>()
-          .exec();
-      } catch (error) {
-        if (this.isDuplicateKeyError(error)) throw this.duplicateResortError();
-        throw error;
-      }
-      if (result) return result;
+      if (!resort) throw new NotFoundException('Resort not found');
+      return resort;
+    } catch (error) {
+      if (this.isDuplicateKeyError(error)) throw this.duplicateResortError();
+      throw error;
     }
-    throw new ConflictException('Resort status changed; retry the update');
   }
 
-  public removeResortByAdmin(resortId: MongoId): Promise<Resort> {
-    return this.updateResortByAdmin({
-      _id: validateMongoObjectId(resortId).toHexString(),
-      resortStatus: ResortStatus.DELETE,
-    });
+  public async removeResortByAdmin(resortId: MongoId): Promise<Resort> {
+    const resort = await this.resortModel
+      .findOneAndDelete({ _id: resortId })
+      .lean<Resort>()
+      .exec();
+    if (!resort) throw new NotFoundException('Resort not found');
+    return resort;
   }
 
   public async likeTargetResort(
@@ -315,7 +292,7 @@ export class ResortService {
 
   private duplicateResortError(): ConflictException {
     return new ConflictException(
-      'A resort with this title, location and address already exists',
+      'A resort with this title, location, address and level already exists',
     );
   }
 

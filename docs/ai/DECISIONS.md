@@ -4,6 +4,10 @@ As of 2026-10-04. This records decisions made in this session, not an assertion 
 
 ## Resort-first decisions: 2026-10-04
 
+Later user refinement: add resortLevel to Resort uniqueness. Title/location/address/level is the current identity, with omitted/null level normalized to null. Name the four-field index `unique_resort_identity_with_level` so it can be created before selective removal of the obsolete three-field index. Initially documented the manual index change without executing it. Following a reproduced development failure, the user explicitly approved removing only the obsolete index; that development change was executed and verified, preserving the new index and all records. No automatic synchronization or unrelated index change was performed.
+
+Latest explicit override: separate Resort update and removal. Update directly applies only allowed supplied content/status fields with `findOneAndUpdate` and validation; remove permanently deletes with `findOneAndDelete`. Remove the deletion-timestamp and status-retry workflow. Historical soft-removal/restoration decisions below are superseded for Resort. Related records are retained without cascading; no live deletion was performed during implementation.
+
 - Replace the active Property catalog with Resort and retain the resolver/service/module architecture. Retire Property GraphQL contracts without aliases; no stored-data conversion or database/index migration.
 - Implement the full Resort catalog and existing-style interaction workflows. Keep SOLD_OUT visible; use soft deletion with admin restoration and preserve references.
 - Restrict catalog management to existing ADMIN guards and derive ownership from the authenticated admin. Keep Member/auth unchanged by explicit user choice; verified role-assignment and stale-JWT weaknesses remain.

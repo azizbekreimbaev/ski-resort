@@ -2,6 +2,30 @@
 
 Session migration date: 2026-10-04. Confirmed branding migration: Nestar → SkiResort. No Petoria migration was completed. The separately authorized Resort domain implementation is recorded below; later sections preserve the earlier branding-only work and historical validation.
 
+## Approved development Resort index replacement: 2026-10-04
+
+Investigated the user's BEGINNER/ADVANCED creation failure. Read-only inspection of the configured development database confirmed both the obsolete three-field `unique_resort_identity` and the four-field `unique_resort_identity_with_level`, with only the supplied BEGINNER resort present. The old index was still rejecting different levels, and generic duplicate-error handling hid that index's identity.
+
+After explicit user approval, revalidated both exact index definitions and the replacement's unique/collation settings, removed only `unique_resort_identity`, and verified that `_id_` and the four-field unique index remain. No records were inserted, changed or removed. The ADVANCED request was not submitted on the user's behalf; the user can retry it. Production and unrelated indexes were not modified. The two focused unit suites also passed again (59 tests); no live insertion test was performed.
+
+## Resort uniqueness includes level: 2026-10-04
+
+Preserved the user's addition of resortLevel to the creation pre-check and schema index. Normalized omitted/null level to null, updated the duplicate error and tests, and named the four-field index `unique_resort_identity_with_level`. An installed old three-field index still rejects different levels until selectively removed after the new index builds; the manual commands are documented in [Resort client handoff](RESORT_IMPLEMENTATION.md). No live index/data operations were performed.
+
+Fresh validation passed: two affected Jest suites (59 tests), both application TypeScript checks and separate unit-spec compilation. Patch whitespace and 30 local documentation links passed. Scoped non-fixing lint found one pre-existing constructor-spacing error in ResortService; no unrelated formatting was rewritten. The tests verify matching/index configuration with mocked persistence, not live MongoDB index replacement.
+
+## Separate Resort update and permanent removal: 2026-10-04
+
+By the user's explicit override, update now performs one validated `findOneAndUpdate` for allowed supplied content/status fields. Removed the status read/retry and deletion-timestamp workflow. Removal independently performs `findOneAndDelete`, returns the removed Resort and rejects missing records. Related records are retained without cascading. Earlier soft-removal/timestamp behavior below is historical and superseded.
+
+Fresh validation passed: the two affected service/resolver suites (50 tests), both application TypeScript checks, separate unit-spec compilation, scoped non-fixing lint, whitespace checks and local documentation links. No live database deletion or application/batch startup was performed.
+
+## Resort update request and ID flow review: 2026-10-04
+
+Reviewed Resort module/resolver/service wiring, DTOs, API GraphQL configuration and existing BoardArticle update flow. Resort now converts update `input._id` in the resolver using the existing `shapeIntoMongoObjectId` helper. The validated ID helper also delegates conversion to that existing helper, and soft deletion keeps the ObjectId instead of converting it back to a string. GraphQL still exposes `_id` as String and requires `$input` to be a ResortUpdate object; the reported bare-ID variable error occurs before the resolver executes. Added the correct mutation/variables example to [Resort client handoff](RESORT_IMPLEMENTATION.md).
+
+Fresh checks passed: all 10 discovered unit suites (176 tests), both application TypeScript checks, separate unit-spec compilation, API and batch builds, scoped non-fixing lint on the changed Resort files/specs, and whitespace/local documentation-link checks. The shared config file retains 67 existing lint errors (the same count as its HEAD baseline), with no diagnostics on the changed ID-conversion line. Tests exercise real GraphQL input coercion and the existing validation pipe plus mocked persistence; no live database, frontend checkout or batch jobs were started.
+
 ## Resort uniqueness refinement: 2026-10-04
 
 Added a case-insensitive, trimmed title/location/address creation pre-check and declared the matching compound unique Resort index. Identity is global across admins and all statuses, including soft-deleted resorts. Creation and updates map duplicate-key failures to a clear conflict; unrelated persistence errors remain unchanged. No live records or indexes were inspected, rewritten or removed; existing duplicates must be resolved before MongoDB can build the new index, and concurrent-write protection requires that index.

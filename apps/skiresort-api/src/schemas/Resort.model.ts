@@ -67,10 +67,10 @@ const ResortSchema = new Schema(
 );
 
 ResortSchema.index(
-  { resortLocation: 1, resortTitle: 1, resortAddress: 1 },
+  { resortLocation: 1, resortTitle: 1, resortAddress: 1, resortLevel: 1 },
   {
     unique: true,
-    name: 'unique_resort_identity',
+    name: 'unique_resort_identity_with_level',
     collation: resortIdentityCollation,
   },
 );
