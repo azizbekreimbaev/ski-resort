@@ -2,6 +2,8 @@
 
 SkiResort is a NestJS backend monorepo with API and scheduled batch applications.
 
+The API now provides the Resort catalog and interactions in place of the legacy Property feature. See the [Resort API/client handoff](docs/ai/RESORT_IMPLEMENTATION.md) and [validation record](docs/ai/COMPLETED_TASKS.md). Member/instructor, Equipment and Booking migration remain deferred.
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

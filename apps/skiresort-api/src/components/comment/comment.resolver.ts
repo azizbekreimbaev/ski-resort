@@ -5,7 +5,7 @@ import { UseGuards } from '@nestjs/common';
 import { CommentInput, CommentsInquiry } from '../../libs/dto/comment/comment.input';
 import type { ObjectId } from 'mongoose';
 import { CommentUpdate } from '../../libs/dto/comment/comment.update';
-import { shapeIntoMongoObjectId } from '../../libs/config';
+import { validateMongoObjectId } from '../../libs/config';
 import { Comment, Comments } from '../../libs/dto/comment/comment';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -35,7 +35,7 @@ export class CommentResolver {
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Comment> {
         console.log('Mutation: updateComment');
-        input._id = shapeIntoMongoObjectId(input._id);
+        input._id = validateMongoObjectId(input._id) as unknown as ObjectId;
         return await this.commentService.updateComment(memberId, input);
     }
 
@@ -48,7 +48,7 @@ export class CommentResolver {
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Comments> {
         console.log('Query: getComments');
-        input.search.commentRefId = shapeIntoMongoObjectId(input.search.commentRefId);
+        input.search.commentRefId = validateMongoObjectId(input.search.commentRefId) as unknown as ObjectId;
         const result = await this.commentService.getComments(memberId, input);
         return result;
     }
@@ -61,7 +61,7 @@ export class CommentResolver {
     @Mutation((returns) => Comment)
     public async removeCommentByAdmin(@Args('commentId') input: string): Promise<Comment> {
         console.log('Mutation: removeCommentByAdmin');
-        const commentId = shapeIntoMongoObjectId(input);
+        const commentId = validateMongoObjectId(input) as unknown as ObjectId;
         return await this.commentService.removeCommentByAdmin(commentId);
     }
 

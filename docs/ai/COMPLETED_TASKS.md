@@ -1,6 +1,46 @@
 # Completed tasks and validation
 
-Session migration date: 2026-10-04. Confirmed migration: Nestar → SkiResort. No Petoria or business-domain migration was completed.
+Session migration date: 2026-10-04. Confirmed branding migration: Nestar → SkiResort. No Petoria migration was completed. The separately authorized Resort domain implementation is recorded below; later sections preserve the earlier branding-only work and historical validation.
+
+## Resort uniqueness refinement: 2026-10-04
+
+Added a case-insensitive, trimmed title/location/address creation pre-check and declared the matching compound unique Resort index. Identity is global across admins and all statuses, including soft-deleted resorts. Creation and updates map duplicate-key failures to a clear conflict; unrelated persistence errors remain unchanged. No live records or indexes were inspected, rewritten or removed; existing duplicates must be resolved before MongoDB can build the new index, and concurrent-write protection requires that index.
+
+Fresh validation: the two affected Jest suites passed (52 tests), both application TypeScript checks passed, targeted unit-test TypeScript compilation passed, and the API build passed. Scoped non-fixing lint and patch whitespace checks passed. These isolated tests verify query/index configuration and mocked duplicate failures; they do not establish live MongoDB index installation or concurrent integration behavior.
+
+## Location/facility enum refinement: 2026-10-04
+
+Added the user's exact `ResortLocation` and `ResortFacilities` enum values and GraphQL registration. Updated Resort output/create/update/search DTOs, element validation and Mongoose constraints. Location remains required; facilities remain nullable and accept an empty array. This explicitly supersedes the earlier free-form representation without modifying the DMM, records, indexes or database connections. Client enum types and stored-value compatibility are documented in [Resort implementation](RESORT_IMPLEMENTATION.md).
+
+Fresh follow-up checks passed: both application TypeScript configurations, separate unit-spec compiler, API build, four affected Jest suites with 92 tests, scoped lint on the five production files and four affected specs, and patch whitespace. No live database or full application startup was used. The previous implementation's complete-suite/build/lint results below remain its historical validation, not a newly repeated full lint/batch-build run.
+
+## Resort-first implementation: 2026-10-04
+
+- Replaced the active Property component, schema, DTOs and enums with Resort, matching DMM Resort fields/nullability and the existing NestJS resolver/service/module pattern.
+- Implemented public catalog/detail, ADMIN catalog management, soft deletion/restoration, authenticated likes/views/favorites/visited, and Resort comments with active-comment counters.
+- Rewired interaction groups/lookups, protected joined credentials, validated nested inputs/IDs, and added duplicate handling plus exact-record compensation for failed counter writes.
+- Removed Property batch ranking/model dependencies and its rollback work; retained Member/AGENT ranking, Member/auth contracts, existing stored records, uploads, databases and live indexes.
+- Documented intentional Property GraphQL removal and client replacements in [Resort implementation](RESORT_IMPLEMENTATION.md). Updated affected decisions/next steps and corrected handoff context links.
+
+### Fresh validation for Resort work
+
+| Check | Result | Boundary |
+|---|---|---|
+| Both application TypeScript configurations, noEmit/incremental false | Passed | Application configurations exclude tests |
+| Separate compiler configuration explicitly including all 10 new unit-spec files | Passed | Temporary configuration; existing e2e suites excluded |
+| Default Jest discovery/run, no cache | Passed: 10 suites, 127 tests | Mocked services/models, schema validation and fake auth; no MongoDB |
+| Isolated actual GraphQL schema generation | Passed | Resort plus existing Member/BoardArticle resolver metadata; no full application bootstrap |
+| Existing guard execution with fabricated identities | Passed | Anonymous/wrong-role denials, ADMIN forwarding, public/authenticated behavior; no real JWT deployment test |
+| API and explicit skiresort-batch npm builds | Passed | Both production bundles generated; no application/scheduler execution |
+| Lint for new Resort files/specs and rewritten interaction/comment services | Passed: zero diagnostics | Existing partially modified legacy files retain lint debt |
+| Whole-project non-fixing ESLint, 92 TypeScript files | Failed: 2,127 errors, 20 warnings | Fresh observed totals, distinct from historical 3,214/24; legacy formatting/type debt not repaired wholesale |
+| Local Markdown links in docs/ai | Passed: 27 links | File-target checks across the seven handoff documents |
+| git diff --check | Passed | Line-ending notices are not whitespace failures |
+| Live MongoDB integration, full bootstrap/e2e, deployment, stored-data/index migration | Not run | No database connection or scheduled jobs started |
+
+Validation used the available local temporary Node v24.19.0 runtime and installed dependencies, without changing dependency versions. A broader root-config compiler probe encountered existing e2e supertest import/type issues; the targeted new-unit-spec compiler passed separately. A Jest-only UUID mock isolates the installed ESM image-name dependency from unrelated unit tests.
+
+Member/instructor migration, Equipment and Booking remain deferred. Auth was deliberately unchanged, so verified role-assignment and stale-JWT weaknesses still affect administrative trust. Compensation is best effort, not a transactional guarantee; existing group-less unique indexes remain stricter than group-aware matching. No frontend changes, live-data conversion, commit or publication is claimed.
 
 ## Completed work
 
@@ -36,7 +76,7 @@ No business-domain modules, GraphQL operations/types, MongoDB schemas/collection
 | Git whitespace checks | Passed | Existing line-ending notices are not whitespace failures |
 | Full database-backed e2e / live production startup | Not run | No claim of complete runtime integration coverage |
 
-Validation used temporary Node v24.19.0 and installed dependencies without dependency updates. Compiler/build/greeting results are migration checks; older mocked defect probes in `context/evidence` remain historical. See [verification](../context/verification.md).
+Validation used temporary Node v24.19.0 and installed dependencies without dependency updates. Compiler/build/greeting results are migration checks; older mocked defect probes in `context/evidence` remain historical. See [verification](../../context/verification.md).
 
 ## Current-state caveats
 

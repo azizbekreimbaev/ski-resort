@@ -1,4 +1,7 @@
 import { ObjectId } from 'bson'
+import { BadRequestException } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { LikeGroup } from './enums/like.enum';
 
 
 export const availableAgentSorts = ["createdAt", "updatedAt", "memberLikes", "memberViews", "memberRank"]
@@ -25,20 +28,16 @@ export const shapeIntoMongoObjectId = (target: any) => {
     return typeof target === "string" ? new ObjectId(target) : target
 }
 
+export const validateMongoObjectId = (value: unknown): Types.ObjectId => {
+  if (value instanceof Types.ObjectId) return value;
+  if (typeof value !== 'string' || !/^[a-f\d]{24}$/i.test(value)) {
+    throw new BadRequestException('Invalid MongoDB ObjectId');
+  }
+  return new Types.ObjectId(value);
+};
 
 
 
-
-export const availableOptions = ['propertyBarter', 'propertyRent'];
-
-export const availablePropertySorts = [
-    'createdAt',
-    'updatedAt',
-    'propertyLikes',
-    'propertyViews',
-    'propertyRank',
-    'propertyPrice',
-];
 
 export const availableBoardArticleSorts = ['createdAt', 'updatedAt', 'articleLikes', 'articleViews']
 
@@ -56,40 +55,45 @@ export const lookupMember = {
 
 //**COMPLEX LOOKUP */
 
-export const lookupAuthMemberLiked = (memberId: T, targetRefId: string = "$_id") => {
-    return {
-        $lookup: {
-            from: "likes",
-            let: {
-                localLikeRefId: targetRefId,
-                localMemberId: memberId,
-                localMyFavorite: true
+export const lookupAuthMemberLiked = (
+  memberId: T | null,
+  targetRefId: string = '$_id',
+  group: LikeGroup = LikeGroup.MEMBER,
+) => {
+  return {
+    $lookup: {
+      from: 'likes',
+      let: {
+        localLikeRefId: targetRefId,
+        localMemberId: memberId,
+        localMyFavorite: true,
+        localLikeGroup: group,
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ['$likeRefId', '$$localLikeRefId'] },
+                { $eq: ['$memberId', '$$localMemberId'] },
+                { $eq: ['$likeGroup', '$$localLikeGroup'] },
+              ],
             },
-
-            pipeline: [
-                {
-                    $match: {
-                        $expr: {
-                            $and: [{ $eq: ["$likeRefId", "$$localLikeRefId"] }, { $eq: ["$memberId", "$$localMemberId"] }]
-                        },
-
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        memberId: 1,
-                        likeRefId: 1,
-                        myFavorite: "$$localMyFavorite",
-                    }
-                }
-            ],
-
-            as: "meLiked"
-
-        }
-    }
-}
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            memberId: 1,
+            likeRefId: 1,
+            myFavorite: '$$localMyFavorite',
+          },
+        },
+      ],
+      as: 'meLiked',
+    },
+  };
+};
 
 
 interface LookupAuthMemberFollowed {
@@ -152,19 +156,25 @@ export const lookupFollowerData = {
 }
 
 export const lookupFavorite = {
-    $lookup: {
-        from: "members",
-        localField: "favoriteProperty.memberId",
-        foreignField: "_id",
-        as: "favoriteProperty.memberData"
-    }
-}
+  $lookup: {
+    from: 'members',
+    let: { ownerId: '$favoriteResort.memberId' },
+    pipeline: [
+      { $match: { $expr: { $eq: ['$_id', '$$ownerId'] } } },
+      { $project: { memberPassword: 0, accessToken: 0, authorization: 0 } },
+    ],
+    as: 'favoriteResort.memberData',
+  },
+};
 
 export const lookupVisit = {
-    $lookup: {
-        from: "members",
-        localField: "visitedProperty.memberId",
-        foreignField: "_id",
-        as: "visitedProperty.memberData"
-    }
-}
+  $lookup: {
+    from: 'members',
+    let: { ownerId: '$visitedResort.memberId' },
+    pipeline: [
+      { $match: { $expr: { $eq: ['$_id', '$$ownerId'] } } },
+      { $project: { memberPassword: 0, accessToken: 0, authorization: 0 } },
+    ],
+    as: 'visitedResort.memberData',
+  },
+};

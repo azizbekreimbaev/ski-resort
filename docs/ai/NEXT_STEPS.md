@@ -2,6 +2,16 @@
 
 Prepared 2026-10-04. This is the requested "tomorrow" backlog for the next working session, not a scheduled job or authorization to implement unrelated repairs. Target remains SkiResort; domain conversion is deferred.
 
+## Current priorities after Resort implementation
+
+1. Update actual frontend GraphQL documents/code generation for the retired Property operations and new Resort DTOs. No frontend source is present or changed here; use the [client handoff](RESORT_IMPLEMENTATION.md).
+2. Verify Resort GraphQL/database behavior in an isolated MongoDB environment, including aggregation results, concurrency and compensation failures. Mocked tests and schema checks do not establish live integration correctness.
+3. Plan Member/instructor migration against the DMM, including USER/ADMIN/INSTRUCTOR, nullable instructor fields, AGENT client/stored-data compatibility and the remaining Member ranking policy.
+4. Resolve existing role-assignment and stale-JWT weaknesses before relying on admin-only access in deployment. Auth was explicitly preserved in the Resort slice.
+5. Specify Equipment and Booking next, including availability, price calculation, date boundaries and cancellation policies that the DMM does not define. No automatic migration of Property records or live indexes is authorized.
+
+The original backlog below predates Resort implementation. Resort conversion is now implemented; the remaining ski-domain phases are deferred.
+
 ## Backend cleanup
 
 | Priority | Task | Completion criterion |
@@ -12,7 +22,7 @@ Prepared 2026-10-04. This is the requested "tomorrow" backlog for the next worki
 | P2 | Plan counter/lifecycle consistency, nested input constraints, nullable updates and reliable batch ordering | Targeted behavior and regression tests specified from current source |
 | P2 | Address test/tooling and production packaging issues, then reduce lint debt in bounded changes | Baseline remains traceable; avoid a repository-wide formatting rewrite mixed with feature fixes |
 
-The defects above are existing review findings, not effects of the brand migration. Reverify source before repair. See [review findings](../context/review-findings.md).
+The defects above are existing review findings, not effects of the brand migration. Reverify source before repair. See [review findings](../../context/review-findings.md).
 
 ## Frontend migration
 

@@ -2,6 +2,8 @@
 
 Confirmed target: SkiResort. The later documentation request initially said Petoria; the user selected "Use SkiResort (Recommended)". Preserve this correction in future sessions.
 
+The later Resort-first phase is implemented. For current domain/API behavior, read [Resort implementation](RESORT_IMPLEMENTATION.md) and [completed tasks](COMPLETED_TASKS.md). Branding-only prompts below retain their original scope; they do not describe the current Resort contracts or authorize the deferred Member/Equipment/Booking phases.
+
 ## Useful original prompts
 
 The following are excerpts, not a complete transcript.

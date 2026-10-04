@@ -5,7 +5,6 @@ import { ConfigModule } from '@nestjs/config'
 import { DatabaseModule } from './database/database.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
-import PropertySchema from '../../skiresort-api/src/schemas/Property.model';
 import MemberSchema from '../../skiresort-api/src/schemas/Member.model';
 
 @Module({
@@ -13,7 +12,6 @@ import MemberSchema from '../../skiresort-api/src/schemas/Member.model';
     ConfigModule.forRoot(),
     DatabaseModule,
     ScheduleModule.forRoot(),
-    MongooseModule.forFeature([{ name: "Property", schema: PropertySchema }]),
     MongooseModule.forFeature([{ name: "Member", schema: MemberSchema }]),
   ],
   controllers: [BatchController],

@@ -2,6 +2,18 @@
 
 As of 2026-10-04. This records decisions made in this session, not an assertion that the session designed every pre-existing subsystem. The confirmed target is SkiResort; no Petoria migration is planned.
 
+## Resort-first decisions: 2026-10-04
+
+- Replace the active Property catalog with Resort and retain the resolver/service/module architecture. Retire Property GraphQL contracts without aliases; no stored-data conversion or database/index migration.
+- Implement the full Resort catalog and existing-style interaction workflows. Keep SOLD_OUT visible; use soft deletion with admin restoration and preserve references.
+- Restrict catalog management to existing ADMIN guards and derive ownership from the authenticated admin. Keep Member/auth unchanged by explicit user choice; verified role-assignment and stale-JWT weaknesses remain.
+- Defer Member/instructor migration, Equipment, Booking, anonymous-view nullability and transactional counters. Preserve existing MEMBER/ARTICLE interactions and Member/AGENT ranking while removing Property ranking.
+- Preserve DMM Resort fields/enums/nullability; do not invent Resort ranking or booking policies. Implementation defaults and compensation limits are documented in [Resort implementation](RESORT_IMPLEMENTATION.md).
+- Later explicit refinement: apply the user's exact ResortLocation and ResortFacilities values to GraphQL DTOs, search validation and Mongoose enum constraints. This overrides the earlier unconstrained location/facility representation while preserving required location and nullable facilities; it does not authorize stored-data conversion or diagram edits.
+- Later user-requested duplicate prevention: use the global title/location/address combination, ignoring letter case and trimming title/address edges, across all admins and statuses. Declare a new Resort compound unique index and return clear conflicts on duplicate creation/update. Soft-deleted records retain their identity and can be restored. This authorizes the new schema index declaration, superseding the earlier no-index-change boundary for this index only; live duplicate cleanup and index installation were not performed.
+
+The following decisions describe the earlier branding migration and do not restrict this separately authorized Resort domain work.
+
 ## Decisions and tradeoffs
 
 | Decision | Reason | Risk / alternative |
@@ -33,4 +45,4 @@ The agreed migration preserved `.env.example` database names. The later document
 
 ## Evidence boundaries
 
-Original review evidence is dated 2026-10-03. The naming migration and its compiler/build/greeting validation were recorded on 2026-10-04. Historical evidence path substitutions did not rerun the historical probes. See [verification](../context/verification.md), [backend migration](BACKEND_MIGRATION.md), and [next steps](NEXT_STEPS.md).
+Original review evidence is dated 2026-10-03. The naming migration and its compiler/build/greeting validation were recorded on 2026-10-04. Historical evidence path substitutions did not rerun the historical probes. See [verification](../../context/verification.md), [backend migration](BACKEND_MIGRATION.md), and [next steps](NEXT_STEPS.md).

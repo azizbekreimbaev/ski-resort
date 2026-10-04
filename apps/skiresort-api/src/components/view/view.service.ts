@@ -1,93 +1,117 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import type { ObjectId } from 'mongoose';
 import { View } from '../../libs/dto/view/view';
 import { ViewInput } from '../../libs/dto/view/view.input';
-import { T } from '../../libs/types/common';
-import type { ObjectId } from 'mongoose';
-import { lookupFavorite, lookupVisit } from '../../libs/config';
-import { Properties } from '../../libs/dto/property/property';
-import { OrdinaryInquiry } from '../../libs/dto/property/property.input';
+import { ResortHistoryInquiry } from '../../libs/dto/resort/resort.input';
+import { Resort, Resorts } from '../../libs/dto/resort/resort';
+import { TotalCounter } from '../../libs/dto/member/member';
+import { lookupAuthMemberLiked, lookupVisit } from '../../libs/config';
 import { LikeGroup } from '../../libs/enums/like.enum';
 import { ViewGroup } from '../../libs/enums/view.enum';
+import { ResortStatus } from '../../libs/enums/resort.enum';
+import { Message } from '../../libs/enums/common.enum';
+
+export interface ViewChange {
+  record: View | null;
+  undo: () => Promise<void>;
+}
 
 @Injectable()
 export class ViewService {
-    constructor(@InjectModel("View") private readonly viewModel: Model<View>) { }
+  constructor(@InjectModel('View') private readonly viewModel: Model<View>) {}
 
+  public async recordView(input: ViewInput): Promise<View | null> {
+    return (await this.recordViewWithChange(input)).record;
+  }
 
-    public async recordView(input: ViewInput): Promise<View | null> {
-
-        const viewExist = await this.checkViewExistance(input)
-        if (!viewExist) {
-            console.log(" new view inserting")
-            return await this.viewModel.create(input)
-        } else {
-            return null
-        }
-
+  public async recordViewWithChange(input: ViewInput): Promise<ViewChange> {
+    const search = {
+      memberId: input.memberId,
+      viewRefId: input.viewRefId,
+      viewGroup: input.viewGroup,
+    };
+    if (await this.viewModel.findOne(search).exec()) {
+      return { record: null, undo: () => Promise.resolve() };
     }
-
-
-    private async checkViewExistance(input: ViewInput): Promise<View | null> {
-        const { memberId, viewRefId } = input
-
-        const search: T = {
-            memberId: memberId, viewRefId: viewRefId
-        }
-
-        return await this.viewModel.findOne(search).exec()
-
+    try {
+      const created = await this.viewModel.create(input);
+      let removal: Promise<void> | undefined;
+      return {
+        record: created,
+        undo: () =>
+          (removal ??= this.viewModel
+            .deleteOne({ _id: created._id })
+            .exec()
+            .then(() => undefined)),
+      };
+    } catch (err) {
+      if (
+        (err as { code?: number } | null)?.code === 11000 &&
+        (await this.viewModel.findOne(search).exec())
+      ) {
+        return { record: null, undo: () => Promise.resolve() };
+      }
+      throw new BadRequestException(Message.CREATE_FAILED);
     }
+  }
 
-    public async getVisitedProperties(memberId: ObjectId, inqut: OrdinaryInquiry): Promise<Properties> {
-        const { page, limit } = inqut
-
-        const match: T = { viewGroup: ViewGroup.PROPERTY, memberId: memberId }
-
-        const data: T = await this.viewModel.aggregate([
-            { $match: match },
-            { $sort: { updatedAt: -1 } },
-
-            {
-                $lookup: {
-                    from: "properties",
-                    localField: "viewRefId",
-                    foreignField: "_id",
-                    as: "visitedProperty"
-                }
+  public async getVisitedResorts(
+    memberId: ObjectId | Types.ObjectId,
+    input: ResortHistoryInquiry,
+  ): Promise<Resorts> {
+    const { page, limit } = input;
+    const data = await this.viewModel
+      .aggregate<{
+        list: { visitedResort: Resort }[];
+        metaCounter: TotalCounter[];
+      }>([
+        { $match: { viewGroup: ViewGroup.RESORT, memberId } },
+        { $sort: { createdAt: -1, _id: -1 } },
+        {
+          $lookup: {
+            from: 'resorts',
+            localField: 'viewRefId',
+            foreignField: '_id',
+            as: 'visitedResort',
+          },
+        },
+        { $unwind: '$visitedResort' },
+        {
+          $match: {
+            'visitedResort.resortStatus': {
+              $in: [ResortStatus.ACTIVE, ResortStatus.SOLD_OUT],
             },
-
-            {
-                $unwind: "$visitedProperty"
-            },
-
-            {
-                $facet: {
-                    list: [
-                        { $skip: (page - 1) * limit },
-                        { $limit: limit },
-
-                        lookupVisit,
-                        { $unwind: "$visitedProperty.memberData" }
-                    ],
-                    metaCounter: [{ $count: "total" }]
-                }
-            }
-
-
-        ]).exec()
-
-        console.log("data", data)
-
-        const result: Properties = { list: [], metaCounter: data[0].metaCounter }
-
-        result.list = data[0].list.map((ele) => ele.visitedProperty)
-        console.log("result", result)
-
-        return result
-
-    }
-
-
+          },
+        },
+        {
+          $facet: {
+            list: [
+              { $skip: (page - 1) * limit },
+              { $limit: limit },
+              lookupVisit,
+              {
+                $unwind: {
+                  path: '$visitedResort.memberData',
+                  preserveNullAndEmptyArrays: true,
+                },
+              },
+              lookupAuthMemberLiked(
+                memberId,
+                '$visitedResort._id',
+                LikeGroup.RESORT,
+              ),
+              { $set: { 'visitedResort.meLiked': '$meLiked' } },
+            ],
+            metaCounter: [{ $count: 'total' }],
+          },
+        },
+      ])
+      .exec();
+    return {
+      list: (data[0]?.list ?? []).map((entry) => entry.visitedResort),
+      metaCounter: data[0]?.metaCounter ?? [],
+    };
+  }
 }

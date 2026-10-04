@@ -1,101 +1,134 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Like, MeLiked } from '../../libs/dto/like/like';
-import { Model } from 'mongoose'
-import { LikeInput } from '../../libs/dto/like/like.input';
-import { T } from '../../libs/types/common';
-import { Message } from '../../libs/enums/common.enum';
+import { Model, Types } from 'mongoose';
 import type { ObjectId } from 'mongoose';
-import { OrdinaryInquiry } from '../../libs/dto/property/property.input';
-import { Properties } from '../../libs/dto/property/property';
+import { Like, MeLiked } from '../../libs/dto/like/like';
+import { LikeInput } from '../../libs/dto/like/like.input';
+import { ResortHistoryInquiry } from '../../libs/dto/resort/resort.input';
+import { Resort, Resorts } from '../../libs/dto/resort/resort';
+import { TotalCounter } from '../../libs/dto/member/member';
+import { Message } from '../../libs/enums/common.enum';
 import { LikeGroup } from '../../libs/enums/like.enum';
-import { lookupFavorite } from '../../libs/config';
-import { elementAt } from 'rxjs';
+import { ResortStatus } from '../../libs/enums/resort.enum';
+import { lookupAuthMemberLiked, lookupFavorite } from '../../libs/config';
+
+export interface LikeChange {
+  modifier: number;
+  undo: () => Promise<void>;
+}
+
 @Injectable()
 export class LikeService {
-    constructor(@InjectModel("Like") private readonly likeModel: Model<Like>,
-    ) { }
+  constructor(@InjectModel('Like') private readonly likeModel: Model<Like>) {}
 
-    public async toggleLike(input: LikeInput): Promise<number> {
-        const search: T = { memberId: input.memberId, likeRefId: input.likeRefId },
-            exist = await this.likeModel.findOne(search).exec()
+  public async toggleLike(input: LikeInput): Promise<number> {
+    return (await this.toggleLikeWithChange(input)).modifier;
+  }
 
-        let modifier = 1
-
-        if (exist) {
-            await this.likeModel.findOneAndDelete(search).exec()
-            modifier = -1
-        } else {
-            try {
-                await this.likeModel.create(input)
-            } catch (err) {
-                console.log("ERROR toggleLike Like servcice", err instanceof Error ? err.message : err)
-                throw new BadRequestException(Message.CREATE_FAILED)
-            }
-        }
-
-        return modifier
-
+  public async toggleLikeWithChange(input: LikeInput): Promise<LikeChange> {
+    const search = {
+      memberId: input.memberId,
+      likeRefId: input.likeRefId,
+      likeGroup: input.likeGroup,
+    };
+    const removed = await this.likeModel.findOneAndDelete(search).exec();
+    if (removed) {
+      const snapshot = removed.toObject();
+      let restoration: Promise<void> | undefined;
+      return {
+        modifier: -1,
+        undo: () =>
+          (restoration ??= this.likeModel
+            .create([snapshot], { timestamps: false })
+            .then(() => undefined)),
+      };
     }
 
-
-    public async checkLikeExistence(input: LikeInput): Promise<MeLiked[]> {
-        const { memberId, likeRefId } = input;
-        const result = await this.likeModel.findOne({ memberId: memberId, likeRefId: likeRefId }).exec()
-
-        return result ? [{ memberId: memberId, likeRefId: likeRefId, myFavorite: true }] : []
-
+    try {
+      const created = await this.likeModel.create(input);
+      let removal: Promise<void> | undefined;
+      return {
+        modifier: 1,
+        undo: () =>
+          (removal ??= this.likeModel
+            .deleteOne({ _id: created._id })
+            .exec()
+            .then(() => undefined)),
+      };
+    } catch (err) {
+      if (
+        (err as { code?: number } | null)?.code === 11000 &&
+        (await this.likeModel.findOne(search).exec())
+      ) {
+        return { modifier: 0, undo: () => Promise.resolve() };
+      }
+      throw new BadRequestException(Message.CREATE_FAILED);
     }
+  }
 
+  public async checkLikeExistence(input: LikeInput): Promise<MeLiked[]> {
+    const { memberId, likeRefId, likeGroup } = input;
+    const result = await this.likeModel
+      .findOne({ memberId, likeRefId, likeGroup })
+      .exec();
+    return result ? [{ memberId, likeRefId, myFavorite: true }] : [];
+  }
 
-
-    public async getFavoriteProperties(memberId: ObjectId, inqut: OrdinaryInquiry): Promise<Properties> {
-        const { page, limit } = inqut
-
-        const match: T = { likeGroup: LikeGroup.PROPERTY, memberId: memberId }
-
-        const data: T = await this.likeModel.aggregate([
-            { $match: match },
-            { $sort: { updatedAt: -1 } },
-
-            {
-                $lookup: {
-                    from: "properties",
-                    localField: "likeRefId",
-                    foreignField: "_id",
-                    as: "favoriteProperty"
-                }
+  public async getFavoriteResorts(
+    memberId: ObjectId | Types.ObjectId,
+    input: ResortHistoryInquiry,
+  ): Promise<Resorts> {
+    const { page, limit } = input;
+    const data = await this.likeModel
+      .aggregate<{
+        list: { favoriteResort: Resort }[];
+        metaCounter: TotalCounter[];
+      }>([
+        { $match: { likeGroup: LikeGroup.RESORT, memberId } },
+        { $sort: { updatedAt: -1, _id: -1 } },
+        {
+          $lookup: {
+            from: 'resorts',
+            localField: 'likeRefId',
+            foreignField: '_id',
+            as: 'favoriteResort',
+          },
+        },
+        { $unwind: '$favoriteResort' },
+        {
+          $match: {
+            'favoriteResort.resortStatus': {
+              $in: [ResortStatus.ACTIVE, ResortStatus.SOLD_OUT],
             },
-
-            {
-                $unwind: "$favoriteProperty"
-            },
-
-            {
-                $facet: {
-                    list: [
-                        { $skip: (page - 1) * limit },
-                        { $limit: limit },
-
-                        lookupFavorite,
-                        { $unwind: "$favoriteProperty.memberData" }
-                    ],
-                    metaCounter: [{ $count: "total" }]
-                }
-            }
-
-
-        ]).exec()
-
-        console.log("data", data)
-
-        const result: Properties = { list: [], metaCounter: data[0].metaCounter }
-
-        result.list = data[0].list.map((ele) => ele.favoriteProperty)
-        console.log("result", result)
-
-        return result
-
-    }
-
+          },
+        },
+        {
+          $facet: {
+            list: [
+              { $skip: (page - 1) * limit },
+              { $limit: limit },
+              lookupFavorite,
+              {
+                $unwind: {
+                  path: '$favoriteResort.memberData',
+                  preserveNullAndEmptyArrays: true,
+                },
+              },
+              lookupAuthMemberLiked(
+                memberId,
+                '$favoriteResort._id',
+                LikeGroup.RESORT,
+              ),
+              { $set: { 'favoriteResort.meLiked': '$meLiked' } },
+            ],
+            metaCounter: [{ $count: 'total' }],
+          },
+        },
+      ])
+      .exec();
+    return {
+      list: (data[0]?.list ?? []).map((entry) => entry.favoriteResort),
+      metaCounter: data[0]?.metaCounter ?? [],
+    };
+  }
 }

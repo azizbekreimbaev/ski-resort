@@ -2,6 +2,8 @@
 
 Target: SkiResort, confirmed by the user. Status: planned only. No Next.js frontend source exists in the inspected backend repository, and no frontend refactor has been completed in this session.
 
+Backend follow-up: the separately authorized Resort phase now retires Property operations/types and replaces catalog interactions with Resort contracts. The mappings below are the earlier branding-only plan. Before frontend work, inspect the actual checkout and apply the current [Resort client handoff](RESORT_IMPLEMENTATION.md); preserving Property requests is no longer a valid current-backend assumption.
+
 ## Step-by-step execution
 
 1. Locate the frontend checkout and read its project instructions. Identify Next.js version, App Router versus Pages Router, package manager, actual route tree, component organization, GraphQL client/codegen and test commands. Record concrete paths before editing.
@@ -34,7 +36,7 @@ These are behavior-level mappings, not discovered frontend symbols or routes. Ex
 
 ## GraphQL query/mutation rename plan
 
-**No schema-field rename is planned.** Use the existing [API inventory](../context/api-inventory.md) to verify documents against the actual backend. GraphQL document operation labels are different from schema field names: a brand-prefixed client label may change after checking persisted-query, analytics and generated-hook dependencies; server fields must stay unchanged.
+**No schema-field rename is planned.** Use the existing [API inventory](../../context/api-inventory.md) to verify documents against the actual backend. GraphQL document operation labels are different from schema field names: a brand-prefixed client label may change after checking persisted-query, analytics and generated-hook dependencies; server fields must stay unchanged.
 
 | Existing operations | Kind | Target |
 |---|---|---|

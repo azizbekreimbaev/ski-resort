@@ -1,27 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Property } from '../../skiresort-api/src/libs/dto/property/property';
 import { Model } from 'mongoose'
 import { Member } from '../../skiresort-api/src/libs/dto/member/member';
 import { MemberStatus, MemberType } from '../../skiresort-api/src/libs/enums/member.enum';
-import { PropertyStatus } from '../../skiresort-api/src/libs/enums/property.enum';
 @Injectable()
 export class BatchService {
   constructor(
-    @InjectModel("Property") private readonly propertyModel: Model<Property>,
     @InjectModel("Member") private readonly memberModel: Model<Member>
   ) { }
 
   public async batchRollback(): Promise<void> {
-    await this.propertyModel
-      .updateMany(
-        {
-          propertyStatus: PropertyStatus.ACTIVE,
-        },
-        { propertyRank: 0 },
-      )
-      .exec();
-
     await this.memberModel
       .updateMany(
         {
@@ -31,22 +19,6 @@ export class BatchService {
         { memberRank: 0 },
       )
       .exec();
-  }
-
-  public async batchTopProperties(): Promise<void> {
-    const properties: Property[] = await this.propertyModel
-      .find({
-        propertyStatus: PropertyStatus.ACTIVE,
-        propertyRank: 0,
-      })
-      .exec();
-
-    const promisedList = properties.map(async (ele: Property) => {
-      const { _id, propertyLikes, propertyViews } = ele;
-      const rank = propertyLikes * 2 + propertyViews * 1;
-      return await this.propertyModel.findByIdAndUpdate(_id, { propertyRank: rank });
-    });
-    await Promise.all(promisedList);
   }
 
   public async batchTopAgents(): Promise<void> {

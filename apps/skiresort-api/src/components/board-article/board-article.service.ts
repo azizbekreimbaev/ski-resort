@@ -167,7 +167,7 @@ export class BoardArticleService {
                             { $limit: input.limit },
 
                             // meLiked
-                            lookupAuthMemberLiked(memberId),
+                            lookupAuthMemberLiked(memberId, '$_id', LikeGroup.ARTICLE),
                             lookupMember,
                             { $unwind: '$memberData' },
                         ],
