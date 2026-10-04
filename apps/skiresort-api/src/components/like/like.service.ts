@@ -1,3 +1,6 @@
+import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
+import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
+import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -128,6 +131,61 @@ export class LikeService {
       .exec();
     return {
       list: (data[0]?.list ?? []).map((entry) => entry.favoriteResort),
+      metaCounter: data[0]?.metaCounter ?? [],
+    };
+  }
+  public async getFavoriteEquipments(
+    memberId: ObjectId | Types.ObjectId,
+    input: EquipmentHistoryInquiry,
+  ): Promise<Equipments> {
+    const { page, limit } = input;
+    const data = await this.likeModel
+      .aggregate<{
+        list: { favoriteEquipment: Equipment }[];
+        metaCounter: TotalCounter[];
+      }>([
+        { $match: { likeGroup: LikeGroup.EQUIPMENT, memberId } },
+        { $sort: { updatedAt: -1, _id: -1 } },
+        {
+          $lookup: {
+            from: 'equipments',
+            localField: 'likeRefId',
+            foreignField: '_id',
+            as: 'favoriteEquipment',
+          },
+        },
+        { $unwind: '$favoriteEquipment' },
+        {
+          $match: {
+            'favoriteEquipment.equipmentStatus': {
+              $in: [EquipmentStatus.AVAILABLE],
+            },
+          },
+        },
+        {
+          $facet: {
+            list: [
+              { $skip: (page - 1) * limit },
+              { $limit: limit },
+              lookupAuthMemberLiked(
+                memberId,
+                '$favoriteEquipment._id',
+                LikeGroup.EQUIPMENT,
+              ),
+              { $set: { 'favoriteEquipment.meLiked': '$meLiked' } },
+            ],
+            metaCounter: [{ $count: 'total' }],
+          },
+        },
+      ])
+      .exec();
+    return {
+      list: (data[0]?.list ?? []).map((entry) => ({
+        ...entry.favoriteEquipment,
+        equipmentRentalRates: [
+          ...entry.favoriteEquipment.equipmentRentalRates,
+        ].sort((a, b) => a.durationHours - b.durationHours),
+      })),
       metaCounter: data[0]?.metaCounter ?? [],
     };
   }

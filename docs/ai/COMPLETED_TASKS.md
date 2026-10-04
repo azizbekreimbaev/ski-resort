@@ -1,5 +1,58 @@
 # Completed tasks and validation
 
+## Exact original comment update flow restored: 2026-10-04
+
+The user clarified that the preceding simplification still added unwanted deletion logic. Replaced updateComment with the supplied original flow: resolver converts `_id` using shapeIntoMongoObjectId; service makes one findOneAndUpdate using `_id`, authenticated memberId and ACTIVE status, passes input directly with new=true, throws UPDATE_FAILED on no match and returns the result. CommentUpdate DTO remains unchanged. Removed the catalog deletion helper, preliminary reads, counter updates, compensation, retries, manual timestamps and additional service validation from this operation. Setting DELETE is only a status change; subsequent owner updates fail the ACTIVE predicate. Creation and separate admin removal remain unchanged. This supersedes the owner-deletion behavior described in earlier entries below.
+
+Updated regression expectations and current handoffs/skill. Fresh validation: 22 Jest suites and 420 tests passed; 7 existing opt-in MongoDB tests skipped. API and separate test TypeScript compilation, scoped non-fixing lint on Comment service/spec and Equipment interaction spec, and patch whitespace checks passed. No live database operations or application startup. Owner deletion does not decrement target comment counters, so those counters can differ from ACTIVE comment counts.
+
+## Update-flow simplification review: 2026-10-04
+
+- Reviewed Comment resolver/service/module and Resort, Equipment and Member update paths against the original direct resolver-to-service-to-`findOneAndUpdate` style.
+- Comment content edits now use one owner/ACTIVE-filtered update, without a preliminary catalog lookup. Only content/status are writable; null content/status and invalid status are rejected. Deleted comments cannot be restored by an ordinary edit.
+- Consolidated duplicate Resort/Equipment soft-deletion methods into one catalog deletion path. Kept once-only counter decrement, repeated-deletion handling, conditional compensation and missing Equipment target behavior. Deletion requires this additional work because it changes a target counter as well as the comment.
+- Removed unused ViewModule from CommentModule. The existing resolver already follows the requested simple flow and remains unchanged.
+- Removed the redundant Instructor profile pre-read. Its single update still filters by the authenticated member ID and current ACTIVE INSTRUCTOR database state, preserves field allowlists/Resort validation and refreshes the token on success.
+- Resort and general Member updates already follow the direct pattern. Retained their existing authorization rules. Equipment retains final-state size/category and purchase-price checks and conditional writes, which enforce approved cross-field rules rather than an extra architectural layer.
+
+Fresh checks: 22 Jest suites passed, 428 tests passed; the existing opt-in MongoDB suite's 7 tests remained skipped. Both application TypeScript configurations, separate test compilation and both builds passed. Non-fixing lint passed for Comment service/module/spec and Member service spec. Member service retains 165 errors and zero warnings, matching its HEAD baseline count; no broad formatting cleanup was performed. No live database tests, migration, index changes or deployment.
+
+## Equipment creation manual test report: 2026-10-04
+
+After receiving the Postman `createEquipment` mutation and variables, the user reported that everything was working well for now. Record this as user-reported Equipment creation smoke-test success; no response payload or broader manual test matrix was inspected. The reusable request is in the [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md#postman-createequipment-smoke-test).
+
+This report does not establish coverage of all Equipment operations or replace isolated MongoDB concurrency/aggregation tests. Booking planning is the next recommended domain step, with policies still to be agreed in [next steps](NEXT_STEPS.md). This documentation update does not implement Booking or rerun the implementation checks recorded below.
+
+## Revised Equipment catalog implementation: 2026-10-04
+
+- Implemented Equipment schema/enums/DTOs/module/service/resolver with one normalized size variant per record, KIDS/ADULTS/ALL audience, independent embedded whole-hour KRW rental packages and optional purchase capability. Removed daily Equipment pricing/minimum days and RENTED; minimum is derived from the shortest configured package. Quantity remains manually managed catalog inventory, including zero.
+- Added current ACTIVE ADMIN verification to Equipment management, final-state category/size and purchase validation, conditional dependent-value update predicates, package filters via same-entry $elemMatch, AVAILABLE-only public visibility and permanent removal without cascade. Nullable Resort association and duplicate catalog records are supported; no Equipment owner or secondary/unique index.
+- Integrated EQUIPMENT likes/views/comments, favorites/visited and exact-record compensation using existing shared modules. Authenticated detail counts once per member/Equipment; anonymous detail creates no view. Retained comments remain removable after their Equipment target is permanently deleted.
+- Updated Equipment DMM only; verified every other table, relationship and diagram metadata matches HEAD. Updated current instructions, local Equipment skill and domain/client handoffs while preserving historical records.
+- No Booking, purchase/order/checkout/payment, availability deduction, frontend, live records/index changes, data migration or deployment. Existing Resort and Member/Instructor production behavior remain unchanged.
+
+### Fresh executed validation
+
+| Check | Result | Boundary |
+|---|---|---|
+| API and batch TypeScript configurations, noEmit/incremental false | Passed | No application/database startup |
+| Separate compilation of all current source specs | Passed | Temporary config with explicit Node/Jest type roots; scaffold e2e excluded |
+| Full discovered Jest run, in-band/no-cache | Passed: 22 suites, 421 tests | Schemas, DTOs, generated GraphQL, current-role predicates and mocked persistence/interactions |
+| Existing opt-in MongoDB integration suite | Skipped: 7 tests | No isolated test URI/server supplied; no connection made |
+| API and explicit skiresort-batch builds | Passed | Production bundles generated; server/scheduler not started |
+| Non-fixing ESLint on 15 new TS files plus three rewritten interaction services | Passed: zero diagnostics | Scoped check; no global configuration changes |
+| Non-fixing ESLint on all 24 changed/new TS files | Failed: 24 errors, zero warnings | Five legacy wiring/enum files retain existing formatting debt; HEAD-source stdin comparison confirms unchanged counts per file (8/1/7/4/4). No new diagnostics remain |
+| DMM JSON and unrelated-definition comparison | Passed | Only Equipment table changed; removed/new fields verified |
+| Active Equipment legacy-field/status audit | Passed | Daily-price/min-days/RENTED references occur only in negative tests |
+| Local Markdown links | Passed: 59 targets across 10 documents | docs/ai, AGENTS.md and Equipment skill |
+| Patch whitespace | Passed | Git line-ending notices are not whitespace failures |
+
+Validation used the discovered temporary Node v24.19.0 runtime and existing installed dependencies. Initial test/lint/compiler failures were corrected before the final successful checks above; no new test framework, dependency changes or repo-wide formatting was introduced. MongoDB conditional-write/concurrency and aggregation correctness remain unverified in a real database until explicitly isolated integration testing. Counter compensation is best effort, not transactional or crash-safe.
+
+The user reports Instructor workflow testing worked as expected. That is user-reported evidence, not a newly executed automated MongoDB integration result. Existing Instructor transaction/index rollout prerequisites remain separately recorded.
+
+See [Equipment client handoff](EQUIPMENT_IMPLEMENTATION.md) for exact fields, normalization, filters, operations, examples and future Booking/Purchase boundaries. Historical diagnostics below retain provenance.
+
 ## Member → Instructor implementation: 2026-10-04
 
 - Removed AGENT from active enums, directory, diagnostic permissions and batch code. getInstructors/InstructorsInquiry replace the old provider contracts without aliases; only ACTIVE INSTRUCTOR Members match. Existing paging/sorting/nickname search/facet/Member-like behavior remains.

@@ -1,3 +1,4 @@
+import { EquipmentService } from '../equipment/equipment.service';
 // comment.service.ts
 import {
   BadRequestException,
@@ -30,7 +31,8 @@ export class CommentService {
     private readonly memberService: MemberService,
     private readonly resortService: ResortService,
     private readonly boardArticleService: BoardArticleService,
-  ) {}
+    private readonly equipmentService: EquipmentService,
+  ) { }
 
   public async createComment(
     memberId: ObjectId,
@@ -47,6 +49,8 @@ export class CommentService {
       await this.resortService.assertVisibleResort(input.commentRefId);
     }
 
+    if (input.commentGroup === CommentGroup.EQUIPMENT)
+      await this.equipmentService.assertVisibleEquipment(input.commentRefId);
     let result: Comment | null = null;
     try {
       result = await this.commentModel.create(input);
@@ -91,6 +95,36 @@ export class CommentService {
           throw err;
         }
         break;
+      case CommentGroup.EQUIPMENT:
+        try {
+          await this.equipmentService.equipmentStatsEditor({
+            _id: input.commentRefId,
+            targetKey: 'equipmentComments',
+            modifier: 1,
+          });
+        } catch (err) {
+          try {
+            const removed = await this.commentModel
+              .deleteOne({
+                _id: result._id,
+                memberId,
+                commentGroup: CommentGroup.EQUIPMENT,
+                updatedAt: result.updatedAt,
+              })
+              .exec();
+            if (removed.deletedCount !== 1) {
+              this.logger.warn(
+                `Equipment comment creation compensation did not remove ${validateMongoObjectId(result._id).toHexString()}`,
+              );
+            }
+          } catch {
+            this.logger.warn(
+              `Equipment comment creation compensation failed for ${validateMongoObjectId(result._id).toHexString()}`,
+            );
+          }
+          throw err;
+        }
+        break;
       case CommentGroup.ARTICLE:
         await this.boardArticleService.boardArticleStatsEditor({
           _id: input.commentRefId,
@@ -114,131 +148,19 @@ export class CommentService {
     memberId: ObjectId,
     input: CommentUpdate,
   ): Promise<Comment> {
-    input._id = validateMongoObjectId(input._id) as unknown as ObjectId;
     const { _id } = input;
-    const resortComment = await this.commentModel
-      .findOne({
-        _id,
-        memberId,
-        commentGroup: CommentGroup.RESORT,
-      })
-      .exec();
-    if (resortComment)
-      return this.updateResortComment(memberId, input, resortComment);
-
     const result = await this.commentModel
       .findOneAndUpdate(
         {
           _id: _id,
           memberId: memberId,
           commentStatus: CommentStatus.ACTIVE,
-          commentGroup: { $in: [CommentGroup.MEMBER, CommentGroup.ARTICLE] },
         },
         input,
-        {
-          new: true,
-        },
+        { new: true },
       )
       .exec();
     if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-    return result;
-  }
-
-  private async updateResortComment(
-    memberId: ObjectId,
-    input: CommentUpdate,
-    original: Comment,
-  ): Promise<Comment> {
-    if (
-      input.commentStatus === null ||
-      input.commentContent === null ||
-      (input.commentStatus !== undefined &&
-        !Object.values(CommentStatus).includes(input.commentStatus))
-    ) {
-      throw new BadRequestException(Message.BAD_REQUEST);
-    }
-    if (original.commentStatus === CommentStatus.DELETE) {
-      if (input.commentStatus === CommentStatus.DELETE) return original;
-      throw new InternalServerErrorException(Message.UPDATE_FAILED);
-    }
-
-    const updatedAt = new Date(
-      Math.max(Date.now(), original.updatedAt.getTime() + 1),
-    );
-    const changes: T = { updatedAt };
-    if (input.commentContent !== undefined)
-      changes.commentContent = input.commentContent;
-    if (input.commentStatus !== undefined)
-      changes.commentStatus = input.commentStatus;
-    const result = await this.commentModel
-      .findOneAndUpdate(
-        {
-          _id: original._id,
-          memberId,
-          commentGroup: CommentGroup.RESORT,
-          commentStatus: CommentStatus.ACTIVE,
-          updatedAt: original.updatedAt,
-        },
-        { $set: changes },
-        { new: true, runValidators: true, timestamps: false },
-      )
-      .exec();
-    if (!result) {
-      // Another deletion may have won the compare-and-set while this request was waiting.
-      if (input.commentStatus === CommentStatus.DELETE) {
-        const deleted = await this.commentModel
-          .findOne({
-            _id: original._id,
-            memberId,
-            commentGroup: CommentGroup.RESORT,
-            commentStatus: CommentStatus.DELETE,
-          })
-          .exec();
-        if (deleted) return deleted;
-      }
-      throw new InternalServerErrorException(Message.UPDATE_FAILED);
-    }
-    if (result.commentStatus !== CommentStatus.DELETE) return result;
-
-    try {
-      await this.resortService.resortStatsEditor({
-        _id: original.commentRefId,
-        targetKey: 'resortComments',
-        modifier: -1,
-      });
-    } catch (err) {
-      try {
-        const restored = await this.commentModel
-          .findOneAndUpdate(
-            {
-              _id: original._id,
-              memberId,
-              commentGroup: CommentGroup.RESORT,
-              commentStatus: CommentStatus.DELETE,
-              updatedAt: result.updatedAt,
-            },
-            {
-              $set: {
-                commentStatus: original.commentStatus,
-                commentContent: original.commentContent,
-                updatedAt: original.updatedAt,
-              },
-            },
-            { new: true, runValidators: true, timestamps: false },
-          )
-          .exec();
-        if (!restored) {
-          this.logger.warn(
-            `Resort comment deletion compensation did not restore ${validateMongoObjectId(original._id).toHexString()}`,
-          );
-        }
-      } catch {
-        this.logger.warn(
-          `Resort comment deletion compensation failed for ${validateMongoObjectId(original._id).toHexString()}`,
-        );
-      }
-      throw err;
-    }
     return result;
   }
 
@@ -313,6 +235,26 @@ export class CommentService {
         } catch {
           this.logger.warn(
             `Resort comment removal compensation failed for ${validateMongoObjectId(result._id).toHexString()}`,
+          );
+        }
+        throw err;
+      }
+    }
+    if (
+      result.commentGroup === CommentGroup.EQUIPMENT &&
+      result.commentStatus === CommentStatus.ACTIVE
+    ) {
+      try {
+        await this.equipmentService.commentRemoved(result.commentRefId);
+      } catch (err) {
+        try {
+          await this.commentModel.collection.insertOne({
+            ...result.toObject(),
+            _id: validateMongoObjectId(result._id),
+          });
+        } catch {
+          this.logger.warn(
+            `Equipment comment removal compensation failed for ${validateMongoObjectId(result._id).toHexString()}`,
           );
         }
         throw err;

@@ -5,7 +5,7 @@ import { UseGuards } from '@nestjs/common';
 import { CommentInput, CommentsInquiry } from '../../libs/dto/comment/comment.input';
 import type { ObjectId } from 'mongoose';
 import { CommentUpdate } from '../../libs/dto/comment/comment.update';
-import { validateMongoObjectId } from '../../libs/config';
+import { shapeIntoMongoObjectId, validateMongoObjectId } from '../../libs/config';
 import { Comment, Comments } from '../../libs/dto/comment/comment';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -35,7 +35,7 @@ export class CommentResolver {
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<Comment> {
         console.log('Mutation: updateComment');
-        input._id = validateMongoObjectId(input._id) as unknown as ObjectId;
+        input._id = shapeIntoMongoObjectId(input._id);
         return await this.commentService.updateComment(memberId, input);
     }
 

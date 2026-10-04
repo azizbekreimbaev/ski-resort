@@ -1,3 +1,6 @@
+import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
+import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
+import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -111,6 +114,61 @@ export class ViewService {
       .exec();
     return {
       list: (data[0]?.list ?? []).map((entry) => entry.visitedResort),
+      metaCounter: data[0]?.metaCounter ?? [],
+    };
+  }
+  public async getVisitedEquipments(
+    memberId: ObjectId | Types.ObjectId,
+    input: EquipmentHistoryInquiry,
+  ): Promise<Equipments> {
+    const { page, limit } = input;
+    const data = await this.viewModel
+      .aggregate<{
+        list: { visitedEquipment: Equipment }[];
+        metaCounter: TotalCounter[];
+      }>([
+        { $match: { viewGroup: ViewGroup.EQUIPMENT, memberId } },
+        { $sort: { createdAt: -1, _id: -1 } },
+        {
+          $lookup: {
+            from: 'equipments',
+            localField: 'viewRefId',
+            foreignField: '_id',
+            as: 'visitedEquipment',
+          },
+        },
+        { $unwind: '$visitedEquipment' },
+        {
+          $match: {
+            'visitedEquipment.equipmentStatus': {
+              $in: [EquipmentStatus.AVAILABLE],
+            },
+          },
+        },
+        {
+          $facet: {
+            list: [
+              { $skip: (page - 1) * limit },
+              { $limit: limit },
+              lookupAuthMemberLiked(
+                memberId,
+                '$visitedEquipment._id',
+                LikeGroup.EQUIPMENT,
+              ),
+              { $set: { 'visitedEquipment.meLiked': '$meLiked' } },
+            ],
+            metaCounter: [{ $count: 'total' }],
+          },
+        },
+      ])
+      .exec();
+    return {
+      list: (data[0]?.list ?? []).map((entry) => ({
+        ...entry.visitedEquipment,
+        equipmentRentalRates: [
+          ...entry.visitedEquipment.equipmentRentalRates,
+        ].sort((a, b) => a.durationHours - b.durationHours),
+      })),
       metaCounter: data[0]?.metaCounter ?? [],
     };
   }

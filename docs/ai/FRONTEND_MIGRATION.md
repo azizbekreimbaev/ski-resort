@@ -1,5 +1,7 @@
 # Next.js frontend migration plan
 
+Current Equipment backend phase: implement future clients against [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md). Equipment has independent duration/price packages, category-normalized size, KIDS/ADULTS/ALL audience, optional purchase capability and AVAILABLE-only visibility. No daily Equipment price/minimum days or RENTED status. Existing frontend paths remain unverified; no client implementation is claimed.
+
 Target: SkiResort, confirmed by the user. Status: planned only. No Next.js frontend source exists in the inspected backend repository, and no frontend refactor has been completed in this session.
 
 Current Member backend change: getAgents/AgentsInquiry are replaced by getInstructors/InstructorsInquiry, returning only ACTIVE INSTRUCTOR Members. Final roles are USER/ADMIN/INSTRUCTOR; AGENT is not accepted. Normal signup retains MemberInput.memberType, accepts explicit USER or omission and rejects privileged/null roles. Implement application/status/admin-review and dedicated instructor-profile requests using [backend handoff](BACKEND_MIGRATION.md). Field spelling is instructorAudience. After approval, normal login supplies the INSTRUCTOR JWT. These are required future client changes, not completed frontend work. Agent mappings below describe the earlier branding-only snapshot and must not be treated as current contracts.

@@ -309,18 +309,22 @@ describe('Member instructor workflow and compatibility', () => {
   });
 
   it('denies profile update when current database role/status does not match', async () => {
-    model.findOne.mockReturnValue(query(null));
+    model.findOneAndUpdate.mockReturnValue(query(null));
     await expect(
       service.updateInstructorProfile(memberId as never, {
         instructorPrice1Week: 20,
       }),
     ).rejects.toThrow(ForbiddenException);
-    expect(model.findOne).toHaveBeenCalledWith({
-      _id: memberId,
-      memberType: MemberType.INSTRUCTOR,
-      memberStatus: MemberStatus.ACTIVE,
-    });
-    expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(model.findOne).not.toHaveBeenCalled();
+    expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: memberId,
+        memberType: MemberType.INSTRUCTOR,
+        memberStatus: MemberStatus.ACTIVE,
+      },
+      { $set: { instructorPrice1Week: 20 } },
+      { new: true, runValidators: true },
+    );
   });
 
   it('updates only allowed instructor fields, clears null and refreshes token', async () => {

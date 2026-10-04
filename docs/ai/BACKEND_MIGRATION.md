@@ -1,5 +1,17 @@
 # Backend migration: Nestar → SkiResort
 
+## Equipment catalog implementation: 2026-10-04
+
+The subsequent [update-flow review](COMPLETED_TASKS.md#update-flow-simplification-review-2026-10-04) removed a redundant Instructor profile read. The user's later clarification replaces owner comment updates/deletion with the exact original single-update flow: DELETE is only a status change, without target counters or compensation. Equipment cross-field validation and existing public contracts remain intact.
+
+The user subsequently reported successful Equipment creation testing after receiving the Postman request. See the [reusable smoke test](EQUIPMENT_IMPLEMENTATION.md#postman-createequipment-smoke-test) and [test-report scope](COMPLETED_TASKS.md#equipment-creation-manual-test-report-2026-10-04). Booking specification is the next recommended domain step; its policies and implementation remain pending.
+
+The approved revised Equipment phase is implemented locally. It registers EquipmentModule with admin catalog management, public list/detail, likes/views/comments, favorites and visited history. The Equipment DMM now uses one normalized size variant per record, required KIDS/ADULTS/ALL audience, independent embedded whole-hour rental packages and optional catalog purchase capability. Daily Equipment price/minimum days and RENTED are removed; the shortest package defines the minimum. Resort's daily pricing/two-day minimum and Member/Instructor behavior remain unchanged.
+
+ADMIN Equipment operations reuse RolesGuard and check current database ACTIVE ADMIN. Partial updates validate final dependent fields and use conditional predicates for category/size and purchase fields. Public visibility is AVAILABLE-only; quantity is manually managed, including zero. Permanent removal retains references, and retained Equipment comments can be removed after target deletion. New EQUIPMENT group values preserve existing social contracts and exact-record compensation, without social transactions or new indexes.
+
+No Booking, orders, checkout, payments, availability deduction, frontend, live database/index migration or deployment. See [Equipment client handoff](EQUIPMENT_IMPLEMENTATION.md) and [fresh validation](COMPLETED_TASKS.md). Earlier Equipment deferral and unchanged-DMM statements below are historical snapshots superseded only for this phase.
+
 Documentation date: 2026-10-04. SkiResort is the confirmed target; the Petoria wording in the documentation request was corrected by the user. The original branding migration and later domain phases are recorded separately below.
 
 ## Member → Instructor implementation: 2026-10-04

@@ -90,6 +90,7 @@ describe('Resort comments', () => {
       member as unknown as ConstructorParameters<typeof CommentService>[1],
       resort as unknown as ConstructorParameters<typeof CommentService>[2],
       article as unknown as ConstructorParameters<typeof CommentService>[3],
+      {} as ConstructorParameters<typeof CommentService>[4],
     );
     warning = jest
       .spyOn(Logger.prototype, 'warn')
@@ -125,7 +126,7 @@ describe('Resort comments', () => {
     expect(model.create).not.toHaveBeenCalled();
   });
 
-  it.each(['PROPERTY', 'EQUIPMENT'])(
+  it.each(['PROPERTY', 'UNKNOWN'])(
     'rejects unsupported %s before persistence',
     async (group) => {
       await expect(
@@ -188,144 +189,50 @@ describe('Resort comments', () => {
     );
   });
 
-  it('decrements a successful owner soft deletion only once', async () => {
-    const original = comment();
-    const deleted = comment({
-      commentStatus: CommentStatus.DELETE,
-      updatedAt: new Date('2026-02-01'),
-    });
-    model.findOne
-      .mockReturnValueOnce(query(original))
-      .mockReturnValueOnce(query(deleted));
-    model.findOneAndUpdate.mockReturnValue(query(deleted));
-    const input = { _id: commentId, commentStatus: CommentStatus.DELETE };
-    await expect(service.updateComment(memberId, input)).resolves.toBe(deleted);
-    await expect(service.updateComment(memberId, input)).resolves.toBe(deleted);
-    expect(resort.resortStatsEditor).toHaveBeenCalledTimes(1);
-    expect(resort.resortStatsEditor).toHaveBeenCalledWith({
-      _id: resortId,
-      targetKey: 'resortComments',
-      modifier: -1,
-    });
-    expect(model.findOneAndUpdate).toHaveBeenCalledTimes(1);
-    expect(model.findOneAndUpdate.mock.calls[0][0]).toEqual(
-      expect.objectContaining({ memberId, updatedAt: original.updatedAt }),
-    );
-  });
+  it.each(Object.values(CommentGroup))(
+    'directly updates %s content or status without target counter changes',
+    async (commentGroup) => {
+      for (const change of [
+        { commentContent: 'Updated' },
+        { commentStatus: CommentStatus.DELETE },
+      ]) {
+        const input = { _id: commentId, ...change };
+        const updated = comment({ commentGroup, ...change });
+        model.findOneAndUpdate.mockReturnValue(query(updated));
+        await expect(service.updateComment(memberId, input)).resolves.toBe(
+          updated,
+        );
+        expect(model.findOneAndUpdate).toHaveBeenLastCalledWith(
+          { _id: commentId, memberId, commentStatus: CommentStatus.ACTIVE },
+          input,
+          { new: true },
+        );
+      }
+      expect(model.findOne).not.toHaveBeenCalled();
+      expect(resort.resortStatsEditor).not.toHaveBeenCalled();
+      expect(member.memberStatsEditor).not.toHaveBeenCalled();
+      expect(article.boardArticleStatsEditor).not.toHaveBeenCalled();
+    },
+  );
 
-  it('does not restore an owner-deleted Resort comment', async () => {
-    model.findOne.mockReturnValue(
-      query(comment({ commentStatus: CommentStatus.DELETE })),
-    );
-    await expect(
-      service.updateComment(memberId, {
-        _id: commentId,
-        commentStatus: CommentStatus.ACTIVE,
-      }),
-    ).rejects.toBeInstanceOf(InternalServerErrorException);
-    expect(model.findOneAndUpdate).not.toHaveBeenCalled();
-  });
-
-  it("does not mutate another member's comment", async () => {
-    await expect(
-      service.updateComment(memberId, {
-        _id: commentId,
-        commentStatus: CommentStatus.DELETE,
-      }),
-    ).rejects.toBeInstanceOf(InternalServerErrorException);
-    expect(model.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({ memberId }),
-    );
-    expect(model.findOneAndUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ memberId }),
-      expect.anything(),
-      expect.anything(),
-    );
-    expect(resort.resortStatsEditor).not.toHaveBeenCalled();
-  });
-
-  it('does not decrement for a Resort content edit', async () => {
-    model.findOne.mockReturnValue(query(comment()));
-    model.findOneAndUpdate.mockReturnValue(
-      query(comment({ commentContent: 'Updated' })),
-    );
-    await service.updateComment(memberId, {
-      _id: commentId,
-      commentContent: 'Updated',
-    });
-    expect(resort.resortStatsEditor).not.toHaveBeenCalled();
-  });
-
-  it('treats a concurrent winning deletion as idempotent without another decrement', async () => {
-    const deleted = comment({ commentStatus: CommentStatus.DELETE });
-    model.findOne
-      .mockReturnValueOnce(query(comment()))
-      .mockReturnValueOnce(query(deleted));
-    await expect(
-      service.updateComment(memberId, {
-        _id: commentId,
-        commentStatus: CommentStatus.DELETE,
-      }),
-    ).resolves.toBe(deleted);
-    expect(resort.resortStatsEditor).not.toHaveBeenCalled();
-  });
-
-  it('restores only the failed deletion mutation and preserves its original counter error', async () => {
-    const original = comment();
-    const deleted = comment({
-      commentStatus: CommentStatus.DELETE,
-      updatedAt: new Date('2026-02-01'),
-    });
-    const failure = new Error('counter failed');
-    model.findOne.mockReturnValue(query(original));
-    model.findOneAndUpdate
-      .mockReturnValueOnce(query(deleted))
-      .mockReturnValueOnce(query(original));
-    resort.resortStatsEditor.mockRejectedValue(failure);
-    await expect(
-      service.updateComment(memberId, {
-        _id: commentId,
-        commentStatus: CommentStatus.DELETE,
-      }),
-    ).rejects.toBe(failure);
-    expect(model.findOneAndUpdate.mock.calls[1]).toEqual([
-      {
-        _id: commentId,
-        memberId,
-        commentGroup: CommentGroup.RESORT,
-        commentStatus: CommentStatus.DELETE,
-        updatedAt: deleted.updatedAt,
-      },
-      {
-        $set: {
-          commentStatus: CommentStatus.ACTIVE,
-          commentContent: original.commentContent,
-          updatedAt: original.updatedAt,
-        },
-      },
-      { new: true, runValidators: true, timestamps: false },
-    ]);
-  });
-
-  it('reports a missed soft-deletion compensation without overwriting a concurrent mutation', async () => {
-    const failure = new Error('counter failed');
-    model.findOne.mockReturnValue(query(comment()));
-    model.findOneAndUpdate
-      .mockReturnValueOnce(
-        query(comment({ commentStatus: CommentStatus.DELETE })),
-      )
-      .mockReturnValueOnce(query(null));
-    resort.resortStatsEditor.mockRejectedValue(failure);
-    await expect(
-      service.updateComment(memberId, {
-        _id: commentId,
-        commentStatus: CommentStatus.DELETE,
-      }),
-    ).rejects.toBe(failure);
-    expect(warning).toHaveBeenCalledWith(
-      expect.stringContaining('did not restore'),
-    );
-  });
+  it.each(['missing', 'another member', 'already deleted'])(
+    'fails an update when the owner/ACTIVE filter does not match: %s',
+    async () => {
+      await expect(
+        service.updateComment(memberId, {
+          _id: commentId,
+          commentStatus: CommentStatus.DELETE,
+        }),
+      ).rejects.toBeInstanceOf(InternalServerErrorException);
+      expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: commentId, memberId, commentStatus: CommentStatus.ACTIVE },
+        { _id: commentId, commentStatus: CommentStatus.DELETE },
+        { new: true },
+      );
+      expect(model.findOne).not.toHaveBeenCalled();
+      expect(resort.resortStatsEditor).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([CommentStatus.ACTIVE, CommentStatus.DELETE])(
     'admin removal decrements only when previously %s is active',

@@ -349,15 +349,6 @@ export class MemberService {
     memberId: ObjectId,
     input: InstructorProfileUpdate,
   ): Promise<Member> {
-    const current = await this.memberModel
-      .findOne({
-        _id: memberId,
-        memberType: MemberType.INSTRUCTOR,
-        memberStatus: MemberStatus.ACTIVE,
-      })
-      .exec();
-    if (!current)
-      throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
     const values: Record<string, unknown> = {};
     for (const field of [
       'instructorResortId',

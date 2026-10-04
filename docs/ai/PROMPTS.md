@@ -1,5 +1,7 @@
 # Session prompts and reusable follow-ups
 
+Current Equipment phase is implemented locally using [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md). Use equipmentRentalRates, normalized equipmentSize, equipmentAudience, equipmentPurchasable and conditional equipmentPurchasePrice. Minimum comes from the shortest package; no daily Equipment price/minimum days or RENTED. Booking, purchase workflows, isolated database verification and frontend changes remain separate tasks. Older Equipment deferrals are historical.
+
 Confirmed target: SkiResort. The later documentation request initially said Petoria; the user selected "Use SkiResort (Recommended)". Preserve this correction in future sessions.
 
 Current Member/Instructor phase is implemented locally. For follow-ups, use [backend handoff](BACKEND_MIGRATION.md), final roles USER/ADMIN/INSTRUCTOR, getInstructors/InstructorsInquiry and exact instructorAudience spelling. Legacy AGENT data requires separately approved cleanup and must not be automatically promoted. Lessons, database rollout and frontend work remain separately authorized tasks. Branding-only prompts and historical quotes below retain their original scope; they do not preserve AGENT in current source or authorize reintroducing it.

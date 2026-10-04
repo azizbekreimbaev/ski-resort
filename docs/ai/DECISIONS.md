@@ -1,5 +1,23 @@
 # Migration decisions
 
+## Update-flow review: 2026-10-04
+
+Latest explicit clarification: `updateComment` must match the original project flow exactly. The resolver converts `_id` with `shapeIntoMongoObjectId`; the service performs one `findOneAndUpdate` filtered by `_id`, authenticated `memberId` and ACTIVE status, passing `input` with `{ new: true }`. Deletion through this operation only sets commentStatus to DELETE. No target lookup, counter decrement, compensation, retry, manual timestamp or extra service validation. A missing/non-owned/already-deleted comment fails with UPDATE_FAILED. This supersedes the earlier counter-aware owner-deletion design for every comment group. CommentUpdate DTO and separate creation/admin-removal operations remain unchanged. Instructor profile updates still enforce current ACTIVE INSTRUCTOR state in the write predicate. See [review history](COMPLETED_TASKS.md#update-flow-simplification-review-2026-10-04).
+
+## Approved revised Equipment decisions: 2026-10-04
+
+- Replace Equipment daily price/two-day minimum with a nonempty embedded rental-rate array of unique positive integer durationHours and finite nonnegative independent KRW package prices. Sort by duration; derive minimum, with no separate minimum field or rate collection.
+- Keep nullable normalized string size and one size variant per record. BOOTS use Mondopoint CM; clothing/helmet labels are normalized, helmet ranges and ski/snowboard/pole lengths use CM. No US/EU conversion, category size enums or physical size bounds.
+- Add required audience KIDS/ADULTS/ALL, default ALL. KIDS/ADULTS filters include ALL, while ALL-only matches ALL.
+- Add strict purchase capability, default false; purchase price is null unless purchasable, otherwise required finite >= 0. Every record remains rentable; no purchase workflow.
+- Status values are AVAILABLE/MAINTENANCE/DELETE. AVAILABLE-only public visibility is administrative state, not booking availability. Zero quantity remains visible; no automatic deduction/status change.
+- Keep nullable resort association, no owner field and no unique catalog identity. Duplicate records are allowed. Removal permanently deletes with no cascades.
+- Reuse ADMIN guards and current ACTIVE ADMIN service checks. Final-state category/size and purchase validation uses conditional dependent-value predicates during partial updates.
+- Rental-price filtering requires a selected duration and same-entry $elemMatch. Price and size sorting are deferred. Preserve pagination, existing social groups and exact-record compensation.
+- Revise Equipment DMM/instructions/skill examples as authorized, preserving other domains and historical provenance. Live records/indexes, Booking, payments, purchase checkout, frontend and deployment remain separate work.
+
+See [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md). This supersedes older Equipment daily-pricing/deferral assumptions without changing Resort or Instructor decisions.
+
 As of 2026-10-04. This records decisions made in this session, not an assertion that the session designed every pre-existing subsystem. The confirmed target is SkiResort; no Petoria migration is planned.
 
 ## Member → Instructor decisions: 2026-10-04

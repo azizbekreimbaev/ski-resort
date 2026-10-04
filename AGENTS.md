@@ -32,7 +32,7 @@ The API uses Express, code-first GraphQL/Apollo, Mongoose/MongoDB, JWT guards, l
 - Keep DTOs and enums under `apps/skiresort-api/src/libs/dto` and `apps/skiresort-api/src/libs/enums`; keep Mongoose schemas under `apps/skiresort-api/src/schemas` (schemas are not currently under `libs`). Feature modules remain under `apps/skiresort-api/src/components`.
 - Keep shared auth, member, like, view, comment, follow, board-article and socket modules reusable as the catalog changes.
 
-Current source registers Auth, Member, InstructorApplication, Resort, BoardArticle, Comment, Follow, Like and View modules. Notice and Notification have schema definitions without active feature registration. Equipment, Booking and Lesson remain deferred. Verify current source before relying on this snapshot.
+Current source registers Auth, Member, InstructorApplication, Resort, Equipment, BoardArticle, Comment, Follow, Like and View modules. Notice and Notification have schema definitions without active feature registration. Equipment catalog is implemented with embedded rental packages, normalized sizes, audience and purchase capability. Booking and Lesson remain deferred. Verify current source before relying on this snapshot.
 
 Detailed references are in [architecture](context/architecture.md), [API inventory](context/api-inventory.md), [data model](context/data-model.md), [code standards](context/code-standards.md) and [review findings](context/review-findings.md).
 
@@ -45,7 +45,8 @@ Detailed references are in [architecture](context/architecture.md), [API invento
 - Public signup retains optional MemberInput.memberType, accepting USER/omission and rejecting privileged/null roles. Self updates cannot change role. Only ADMIN application approval promotes ACTIVE USER to INSTRUCTOR; generic admin updates cannot bypass it. Instructor reassignment and Lessons are deferred.
 - Applications use separate `instructorApplications` PENDING/APPROVED/REJECTED snapshots. Submission/review require transactions and a pending-only unique memberId index; deployment must verify both. New operations reuse guards and additionally check current database role/status. See [Member/Instructor handoff](docs/ai/BACKEND_MIGRATION.md).
 - `getInstructors` / `InstructorsInquiry` replace the provider directory. Batch ranks ACTIVE INSTRUCTOR using article/like/view weights 3/2/1, existing schedules and no property contribution. Local implementation does not imply live data/index changes.
-- Resort bookings require a minimum of two days (`resortMinDays`); equipment rentals require a minimum of two days (`equipmentMinDays`).
+- Resort bookings retain a minimum of two days (`resortMinDays`). Equipment rental packages use independent positive whole-hour durations and KRW prices in `equipmentRentalRates`; the minimum is derived from the shortest configured duration. No daily Equipment price or separate minimum field.
+- Equipment uses one normalized size variant per document, `equipmentAudience` KIDS/ADULTS/ALL, and optional purchase capability. Quantity is ADMIN-managed catalog inventory; AVAILABLE is public visibility, not booking availability. No owner field, unique catalog identity, reservation/purchase deduction or automatic status switching. Purchase price is null unless purchasable; prices and rates are validated together. Permanent removal retains related records.
 - One `bookings` collection stores resort bookings, equipment rentals and instructor bookings. It includes the booking member, type, nullable target IDs, start/end dates, quantity, total price and status. `instructorId` references a member, not a separate instructor model.
 - Preserve DMM field spelling, collection casing and required/nullable flags, including nullable `equipments.resortId` and `views.memberId`. Generic comments, likes and views use their group enum plus reference ID; follows remain member-to-member, including instructors.
 - The DMM does not specify resort-owner roles, instructor booking duration, date inclusivity, price formulas, availability/concurrency policy, cancellation policy or notification resource discrimination. Do not present inferred policies as diagram rules; resolve them when relevant implementation needs them.
@@ -78,7 +79,8 @@ These are the exact DMM field values, not a claim that current TypeScript enums 
 | `instructorLevel` | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `ALL` |
 | `resortStatus` | `ACTIVE`, `SOLD_OUT`, `DELETE` |
 | `resortLevel` | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `MIXED` |
-| `equipmentStatus` | `AVAILABLE`, `RENTED`, `MAINTENANCE`, `DELETE` |
+| `equipmentAudience` | `KIDS`, `ADULTS`, `ALL` |
+| `equipmentStatus` | `AVAILABLE`, `MAINTENANCE`, `DELETE` |
 | `equipmentCategory` | `SKI`, `SNOWBOARD`, `BOOTS`, `HELMET`, `POLES`, `CLOTHING`, `OTHER` |
 | `bookingType` | `RESORT`, `EQUIPMENT`, `INSTRUCTOR` |
 | `bookingStatus` | `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED` |
