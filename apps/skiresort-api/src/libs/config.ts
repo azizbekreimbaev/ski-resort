@@ -3,8 +3,13 @@ import { BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { LikeGroup } from './enums/like.enum';
 
-
-export const availableAgentSorts = ["createdAt", "updatedAt", "memberLikes", "memberViews", "memberRank"]
+export const availableInstructorSorts = [
+  'createdAt',
+  'updatedAt',
+  'memberLikes',
+  'memberViews',
+  'memberRank',
+];
 export const availableMemberSorts = ["createdAt", "updatedAt", "memberLikes", "memberViews"]
 
 // IMAGE CONFIGURATION (config.js)
@@ -19,10 +24,6 @@ export const getSerialForImage = (filename: string) => {
     const ext = path.parse(filename).ext;
     return uuidv4() + ext;
 };
-
-
-
-
 
 export const shapeIntoMongoObjectId = (target: any) => {
     return typeof target === "string" ? new ObjectId(target) : target
@@ -94,7 +95,6 @@ export const lookupAuthMemberLiked = (
     },
   };
 };
-
 
 interface LookupAuthMemberFollowed {
     followerId: T,

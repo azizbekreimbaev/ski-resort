@@ -7,10 +7,10 @@ import {
   MemberStatus,
   MemberType,
 } from '../../skiresort-api/src/libs/enums/member.enum';
-import { BATCH_ROLLBACK, BATCH_TOP_AGENTS } from './lib/config';
+import { BATCH_ROLLBACK, BATCH_TOP_INSTRUCTORS } from './lib/config';
 
 describe('Member-only scheduled batch', () => {
-  it('rolls back only active Agent member ranks', async () => {
+  it('rolls back only active Instructor member ranks', async () => {
     const exec = jest.fn().mockResolvedValue({});
     const model = { updateMany: jest.fn().mockReturnValue({ exec }) };
     await new BatchService(
@@ -18,14 +18,14 @@ describe('Member-only scheduled batch', () => {
     ).batchRollback();
     expect(model.updateMany).toHaveBeenCalledTimes(1);
     expect(model.updateMany).toHaveBeenCalledWith(
-      { memberStatus: MemberStatus.ACTIVE, memberType: MemberType.AGENT },
+      { memberStatus: MemberStatus.ACTIVE, memberType: MemberType.INSTRUCTOR },
       { memberRank: 0 },
     );
     expect(exec).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the existing Agent ranking formula and awaits every update', async () => {
-    const agentId = new Types.ObjectId();
+  it('keeps the existing Instructor ranking formula and awaits every update', async () => {
+    const instructorId = new Types.ObjectId();
     let finish: () => void = () => undefined;
     const pending = new Promise<void>((resolve) => {
       finish = resolve;
@@ -34,7 +34,7 @@ describe('Member-only scheduled batch', () => {
       find: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue([
           {
-            _id: agentId,
+            _id: instructorId,
             memberProperties: 2,
             memberArticles: 3,
             memberLikes: 4,
@@ -48,7 +48,7 @@ describe('Member-only scheduled batch', () => {
     const run = new BatchService(
       model as unknown as ConstructorParameters<typeof BatchService>[0],
     )
-      .batchTopAgents()
+      .batchTopInstructors()
       .then(() => {
         completed = true;
       });
@@ -56,19 +56,19 @@ describe('Member-only scheduled batch', () => {
     await Promise.resolve();
     expect(completed).toBe(false);
     expect(model.find).toHaveBeenCalledWith({
-      memberType: MemberType.AGENT,
+      memberType: MemberType.INSTRUCTOR,
       memberStatus: MemberStatus.ACTIVE,
       memberRank: 0,
     });
-    expect(model.findByIdAndUpdate).toHaveBeenCalledWith(agentId, {
-      memberRank: 30,
+    expect(model.findByIdAndUpdate).toHaveBeenCalledWith(instructorId, {
+      memberRank: 22,
     });
     finish();
     await run;
     expect(completed).toBe(true);
   });
 
-  it('exposes only the retained rollback and Agent ranking cron methods', () => {
+  it('exposes only the retained rollback and Instructor ranking cron methods', () => {
     expect(
       Reflect.getMetadata(
         SCHEDULE_CRON_OPTIONS,
@@ -83,10 +83,10 @@ describe('Member-only scheduled batch', () => {
         SCHEDULE_CRON_OPTIONS,
         Object.getOwnPropertyDescriptor(
           BatchController.prototype,
-          'batchTopAgents',
+          'batchTopInstructors',
         )?.value as object,
       ),
-    ).toEqual({ name: BATCH_TOP_AGENTS, cronTime: '40 00 01 * * *' });
+    ).toEqual({ name: BATCH_TOP_INSTRUCTORS, cronTime: '40 00 01 * * *' });
     expect(Object.getOwnPropertyNames(BatchController.prototype)).not.toContain(
       'batchTopProperties',
     );

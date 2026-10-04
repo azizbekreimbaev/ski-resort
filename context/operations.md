@@ -1,5 +1,11 @@
 # Development and operations
 
+## Current Instructor operations: 2026-10-04
+
+Rollback resets ACTIVE INSTRUCTOR ranks at 01:00:00; batchTopInstructors / BATCH_TOP_INSTRUCTORS runs at 01:00:40. Formula: 3 * memberArticles + 2 * memberLikes + memberViews. Cron times, process-local timezone and scheduling implementation are unchanged. Property/Agent jobs below are historical.
+
+Submission/review require transaction-capable MongoDB and unique_pending_instructor_application partial index. Verify before rollout; no live index/data work was performed. Persisted AGENT records require explicitly approved cleanup without automatic promotion. Opt-in integration uses SKIRESORT_TEST_MONGO_URI on an isolated transaction-capable test server; it creates/removes only its generated skiresort_instructor_test_<ObjectId> database and never loads application .env/AppModule. Default unit tests skip it. [Current handoff](../docs/ai/BACKEND_MIGRATION.md).
+
 ## Environment keys found in source
 
 | Key | Use | Current default / selection |

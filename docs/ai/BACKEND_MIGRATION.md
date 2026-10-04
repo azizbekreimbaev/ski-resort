@@ -1,6 +1,56 @@
 # Backend migration: Nestar → SkiResort
 
-Documentation date: 2026-10-04. SkiResort is the confirmed target; the Petoria wording in the documentation request was corrected by the user. This is a project/brand migration, not a business-domain conversion.
+Documentation date: 2026-10-04. SkiResort is the confirmed target; the Petoria wording in the documentation request was corrected by the user. The original branding migration and later domain phases are recorded separately below.
+
+## Member → Instructor implementation: 2026-10-04
+
+The approved domain phase is implemented locally using the existing NestJS resolver/service/module and Mongoose patterns. Final `MemberType` values are USER, ADMIN and INSTRUCTOR. AGENT is removed from active source; no legacy account is automatically promoted. No database, collection, record, installed index, upload, JWT format or dependency was migrated. Lessons, Equipment, Booking and payments remain deferred.
+
+### Member compatibility and breaking directory change
+
+`signup(input: MemberInput!)` and its response stay intact. `MemberInput.memberType` remains optional/nullable in GraphQL: explicit USER and omission work, while explicit ADMIN, INSTRUCTOR or null are rejected before hashing/persistence. Omission uses the existing USER schema default; supplied privileged roles are not silently replaced. Login, password hashing and token issuance retain their existing implementation.
+
+`getAgents` becomes `getInstructors(input: InstructorsInquiry!)`, returning `Members` with `list` and `metaCounter`. There are no aliases for the old operation, input, search type or role. Instructor directory fields remain page, limit, sort, direction and required search with optional nickname text. Sorts remain createdAt, updatedAt, memberLikes, memberViews and memberRank. Existing regex search, pagination/facet and Member-like lookup behavior is preserved. Only ACTIVE INSTRUCTOR members match.
+
+`chechAuthRoles` keeps its spelling and now permits USER/INSTRUCTOR, excluding ADMIN as before. General `updateMember` keeps its existing input and profile behavior but prohibits role changes; unchanged supplied roles are accepted and excluded from writes. Generic admin updates retain USER↔ADMIN operations and conditionally match the current role when changing it. They cannot assign INSTRUCTOR to a non-instructor or reassign an Instructor; dedicated application approval is authoritative. Instructor fields are not added to generic `MemberUpdate`.
+
+### Application GraphQL contracts
+
+| Operation | Guard / current database check | Return |
+|---|---|---|
+| createInstructorApplication(input: InstructorApplicationInput!) | Existing USER RolesGuard; ACTIVE USER | InstructorApplication |
+| getMyInstructorApplication | Existing AuthGuard; ACTIVE authenticated owner | Latest InstructorApplication or null |
+| getAllInstructorApplicationsByAdmin(input: InstructorApplicationsInquiry!) | Existing ADMIN RolesGuard; ACTIVE ADMIN | InstructorApplications |
+| getInstructorApplicationByAdmin(applicationId: String!) | Existing ADMIN RolesGuard; ACTIVE ADMIN | InstructorApplication |
+| approveInstructorApplicationByAdmin(applicationId: String!) | Existing ADMIN RolesGuard; ACTIVE ADMIN | InstructorApplication |
+| rejectInstructorApplicationByAdmin(input: InstructorApplicationReject!) | Existing ADMIN RolesGuard; ACTIVE ADMIN | InstructorApplication |
+| updateInstructorProfile(input: InstructorProfileUpdate!) | Existing INSTRUCTOR RolesGuard; ACTIVE INSTRUCTOR | Member with refreshed token |
+
+Application input requires `instructorExperienceYears` (integer >= 0), a nonempty array of trimmed nonblank `instructorLanguages`, `instructorLevel` (BEGINNER/INTERMEDIATE/ADVANCED/ALL) and scalar `instructorAudience` (KIDS/ADULTS/FAMILY/PRIVATE). Nullable Resort ID and memberDesc bio snapshot are optional. Prices and certificates are excluded. Server derives memberId; applicants cannot supply status, reviewer, timestamps or identity.
+
+`instructorApplications` is an explicitly named new collection. Each submission stores its snapshot, PENDING/APPROVED/REJECTED status and nullable reviewedBy, reviewedAt and rejectionReason. Rejected members submit a new document; previous applications remain unchanged. There are no pending edits, withdrawal or removal operations. Admin rejection requires an input object with `_id` and trimmed nonblank `rejectionReason`.
+
+Admin list inquiries require page >= 1 and limit 1–100. Optional search filters are applicationStatus and memberId; sorts are createdAt, updatedAt and reviewedAt, with existing Direction. Default ordering is createdAt DESC with an _id tie-breaker. List output preserves `list`/`metaCounter`; empty results have empty arrays. Application data has no public query or full Member join.
+
+### Atomicity and instructor profile
+
+Submission and both review operations require MongoDB transactions using the existing connection. Submission conditionally advances the applicant's updatedAt timestamp to serialize against promotion/role changes without modifying role or profile. A schema-declared unique partial index named `unique_pending_instructor_application` constrains memberId only while status is PENDING. Duplicate-key failures become clear conflicts. The index must exist for database-enforced uniqueness.
+
+Approval conditionally marks PENDING as APPROVED and promotes the same ACTIVE USER within one transaction, copying Resort association, experience, languages, level and audience. Errors roll back both writes. Repeated/competing terminal decisions fail with Conflict. Rejection records reviewer/time/reason and never modifies Member. Optional Resort references use existing ACTIVE/SOLD_OUT visibility and are checked again before approval; Resort changes do not cascade.
+
+The members schema/output adds nullable instructorResortId, instructorExperienceYears, instructorLanguages, instructorLevel, **instructorAudience**, and instructorPrice1Week through instructorPrice4Weeks. Normal USER records have no populated instructor data. Prices stay null until set by the approved Instructor. Application bio does not overwrite existing Member bio. Instructor profile updates permit editing/clearing the nine instructor fields; omitted values remain unchanged and prices must be finite/nonnegative. Snapshots remain immutable.
+
+Existing guards/JWT format are preserved; new services also check current database role/status. Approval does not rewrite a user's old JWT. The Instructor must use normal login to obtain an INSTRUCTOR token before role-guarded profile access. No separate signup/login/account is created.
+
+### Batch, clients and rollout boundaries
+
+Provider ranking is now `batchTopInstructors` / `BATCH_TOP_INSTRUCTORS`, with unchanged cron time 01:00:40 and existing asynchronous update pattern. Rollback at 01:00:00 targets ACTIVE INSTRUCTOR members. Rank is `3 * memberArticles + 2 * memberLikes + memberViews`; the obsolete property term is removed without substituting a lesson factor. Existing counters remain stored fields.
+
+Clients must update getAgents/AgentsInquiry to getInstructors/InstructorsInquiry, remove AGENT enum assumptions and use the exact instructorAudience name. No frontend source or deployment was changed. Applications and audience are approved extensions beyond the unchanged DMM.
+
+Before rollout, verify transaction-capable MongoDB and the exact pending index. Do not run broad syncIndexes or alter unrelated indexes. Existing persisted AGENT records, if any, require a separate explicitly approved cleanup decision; they are not approved instructors and are not rewritten, hidden or aliased here. Returning a retained AGENT value can fail GraphQL enum serialization, including login/admin/member joins, so resolve this before deployment. Existing ADMIN provenance and broader stale-token/password-update/upload/logging defects are not repaired by this phase.
+
+An opt-in integration suite uses only `SKIRESORT_TEST_MONGO_URI`, does not load .env/AppModule and creates a unique `skiresort_instructor_test_<ObjectId>` database. It validates uniqueness, review races and transaction rollback, then removes only its generated database. Default tests skip it. Current executed validation and limits are in [completed tasks](COMPLETED_TASKS.md).
 
 ## Later Resort domain migration: 2026-10-04
 

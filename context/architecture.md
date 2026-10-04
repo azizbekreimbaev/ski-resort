@@ -1,5 +1,11 @@
 # Architecture and folder structure
 
+## Current domain wiring: 2026-10-04
+
+The tree below is historical. ComponentsModule now registers Resort instead of Property and includes InstructorApplicationModule. MemberModule imports ResortModule for profile reference validation; ResortModule does not depend on MemberModule. ApplicationModule imports Member/Auth/Resort and registers Application plus existing Member schemas, using connection transactions inside ordinary services. No new architecture/library was introduced.
+
+Roles: USER/ADMIN/INSTRUCTOR. Application snapshots are separate from nullable instructor fields in members, including instructorAudience. Batch shares API Member definitions and ranks Instructors. Old AGENT/Property references below are historical. [Current handoff](../docs/ai/BACKEND_MIGRATION.md).
+
 ## Stack observed
 
 - TypeScript 5.9.3 installed/locked, requested `^5.1.3`; target ES2023, NodeNext modules and resolution, decorator metadata and experimental decorators.

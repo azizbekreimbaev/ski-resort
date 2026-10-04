@@ -1,5 +1,13 @@
 # DTO and enum field reference
 
+## Current Member/Instructor additions: 2026-10-04
+
+The detailed inventory below is historical. MemberType is USER/ADMIN/INSTRUCTOR; AgentsInquiry/AISearch become InstructorsInquiry/InstructorSearch with existing directory fields. MemberInput.memberType remains optional; generic MemberUpdate has no instructor fields.
+
+Member adds nullable instructorResortId, instructorExperienceYears, instructorLanguages, instructorLevel, instructorAudience and instructorPrice1Week through instructorPrice4Weeks. InstructorLevel: BEGINNER/INTERMEDIATE/ADVANCED/ALL. InstructorAudience: KIDS/ADULTS/FAMILY/PRIVATE. Exact field instructorAudience is scalar, nullable in Member/profile and required in application input/output.
+
+New DTOs: InstructorApplicationInput, InstructorApplicationSearch, InstructorApplicationsInquiry, InstructorApplicationReject, InstructorApplication, InstructorApplications and InstructorProfileUpdate. Status: PENDING/APPROVED/REJECTED. See [handoff](../docs/ai/BACKEND_MIGRATION.md) for validation/nullability. Applications/audience extend the unchanged DMM.
+
 Generated from the reviewed TypeScript declarations. Decorators determine GraphQL exposure and validation; TypeScript annotations alone do not. Undecorated fields are included to distinguish server-injected fields.
 
 ## BoardArticleInput

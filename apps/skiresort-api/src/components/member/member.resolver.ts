@@ -1,6 +1,11 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { MemberService } from './member.service';
-import { AgentsInquiry, LoginInput, MemberInput, MembersInquiry } from '../../libs/dto/member/member.input';
+import {
+  InstructorsInquiry,
+  LoginInput,
+  MemberInput,
+  MembersInquiry,
+} from '../../libs/dto/member/member.input';
 import { Member, Members } from '../../libs/dto/member/member';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -15,7 +20,7 @@ import { WithoutGuard } from '../auth/guards/without.guard';
 import { GraphQLUpload, FileUpload } from 'graphql-upload';
 import { createWriteStream } from 'fs';
 import { Message } from '../../libs/enums/common.enum';
-
+import { InstructorProfileUpdate } from '../../libs/dto/member/instructor-profile.update';
 
 @Resolver()
 export class MemberResolver {
@@ -41,7 +46,7 @@ export class MemberResolver {
         return await `hi ${memberNick}`
     }
 
-    @Roles(MemberType.AGENT, MemberType.USER)
+  @Roles(MemberType.INSTRUCTOR, MemberType.USER)
     @UseGuards(RolesGuard)
     @UseGuards(AuthGuard)
     @Query(() => String)
@@ -76,9 +81,12 @@ export class MemberResolver {
 
     @UseGuards(WithoutGuard)
     @Query(() => Members)
-    public async getAgents(@Args("input") input: AgentsInquiry, @AuthMember("_id") memberId: ObjectId): Promise<Members> {
-        console.log("getAgents")
-        return await this.memberService.getAgents(memberId, input)
+  public async getInstructors(
+    @Args('input') input: InstructorsInquiry,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Members> {
+    console.log('getInstructors');
+    return await this.memberService.getInstructors(memberId, input);
     }
 
 
@@ -93,7 +101,15 @@ export class MemberResolver {
     }
 
 
-
+  @Roles(MemberType.INSTRUCTOR)
+  @UseGuards(RolesGuard)
+  @Mutation(() => Member)
+  public async updateInstructorProfile(
+    @Args('input') input: InstructorProfileUpdate,
+    @AuthMember('_id') memberId: ObjectId,
+  ): Promise<Member> {
+    return await this.memberService.updateInstructorProfile(memberId, input);
+  }
 
     /**ADMIN */
 

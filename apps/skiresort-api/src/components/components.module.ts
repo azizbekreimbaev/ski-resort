@@ -7,10 +7,12 @@ import { LikeModule } from './like/like.module';
 import { ViewModule } from './view/view.module';
 import { FollowModule } from './follow/follow.module';
 import { BoardArticleModule } from './board-article/board-article.module';
+import { InstructorApplicationModule } from './instructor-application/instructor-application.module';
 
 @Module({
   imports: [
     MemberModule,
+    InstructorApplicationModule,
     ResortModule,
     AuthModule,
     CommentModule,

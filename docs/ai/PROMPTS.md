@@ -2,6 +2,8 @@
 
 Confirmed target: SkiResort. The later documentation request initially said Petoria; the user selected "Use SkiResort (Recommended)". Preserve this correction in future sessions.
 
+Current Member/Instructor phase is implemented locally. For follow-ups, use [backend handoff](BACKEND_MIGRATION.md), final roles USER/ADMIN/INSTRUCTOR, getInstructors/InstructorsInquiry and exact instructorAudience spelling. Legacy AGENT data requires separately approved cleanup and must not be automatically promoted. Lessons, database rollout and frontend work remain separately authorized tasks. Branding-only prompts and historical quotes below retain their original scope; they do not preserve AGENT in current source or authorize reintroducing it.
+
 The later Resort-first phase is implemented. For current domain/API behavior, read [Resort implementation](RESORT_IMPLEMENTATION.md) and [completed tasks](COMPLETED_TASKS.md). Branding-only prompts below retain their original scope; they do not describe the current Resort contracts or authorize the deferred Member/Equipment/Booking phases.
 
 ## Useful original prompts

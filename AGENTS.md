@@ -32,16 +32,19 @@ The API uses Express, code-first GraphQL/Apollo, Mongoose/MongoDB, JWT guards, l
 - Keep DTOs and enums under `apps/skiresort-api/src/libs/dto` and `apps/skiresort-api/src/libs/enums`; keep Mongoose schemas under `apps/skiresort-api/src/schemas` (schemas are not currently under `libs`). Feature modules remain under `apps/skiresort-api/src/components`.
 - Keep shared auth, member, like, view, comment, follow, board-article and socket modules reusable as the catalog changes.
 
-Current source still registers Auth, Member, Property, BoardArticle, Comment, Follow, Like and View modules. Notice and Notification have schema definitions without active feature registration. Resort, Equipment and Booking are target domains, not implemented modules at the time of this instruction update. Verify current source before relying on this snapshot.
+Current source registers Auth, Member, InstructorApplication, Resort, BoardArticle, Comment, Follow, Like and View modules. Notice and Notification have schema definitions without active feature registration. Equipment, Booking and Lesson remain deferred. Verify current source before relying on this snapshot.
 
 Detailed references are in [architecture](context/architecture.md), [API inventory](context/api-inventory.md), [data model](context/data-model.md), [code standards](context/code-standards.md) and [review findings](context/review-findings.md).
 
 ## Domain Rules
 
 - Use `SkiResort` / `SKIRESORT` / `skiresort` for project identity and Resort, Equipment, Booking and Instructor terminology for the target domain.
-- Do not introduce pet-shop/product enums or real-estate fields into new ski-domain contracts. Existing Property/AGENT contracts are legacy implementation details; replace them only within explicitly requested migration work, with client and stored-data impacts accounted for.
-- Users, admins and instructors share `members`; do not create a separate instructor collection. The target `memberType` values are `USER`, `ADMIN`, `INSTRUCTOR`. Current source still uses `AGENT`; this file does not migrate roles or stored records.
-- Instructor-only fields are nullable: `instructorResortId`, `instructorExperienceYears`, `instructorLanguages`, `instructorLevel`, and `instructorPrice1Week` through `instructorPrice4Weeks`.
+- Do not introduce pet-shop/product enums or real-estate fields into new ski-domain contracts. Property and AGENT APIs are retired; historical documentation retains their provenance. Do not reintroduce aliases or reinterpret legacy data.
+- Users, admins and instructors share `members`; do not create a separate instructor collection. Implemented `memberType` values are `USER`, `ADMIN`, `INSTRUCTOR`. Persisted AGENT records, if any, need separately approved cleanup and must never automatically become INSTRUCTOR.
+- Instructor-only fields are nullable: `instructorResortId`, `instructorExperienceYears`, `instructorLanguages`, `instructorLevel`, `instructorAudience`, and `instructorPrice1Week` through `instructorPrice4Weeks`. Audience is a scalar enum: `KIDS`, `ADULTS`, `FAMILY`, `PRIVATE`; it is an approved extension beyond the unchanged DMM.
+- Public signup retains optional MemberInput.memberType, accepting USER/omission and rejecting privileged/null roles. Self updates cannot change role. Only ADMIN application approval promotes ACTIVE USER to INSTRUCTOR; generic admin updates cannot bypass it. Instructor reassignment and Lessons are deferred.
+- Applications use separate `instructorApplications` PENDING/APPROVED/REJECTED snapshots. Submission/review require transactions and a pending-only unique memberId index; deployment must verify both. New operations reuse guards and additionally check current database role/status. See [Member/Instructor handoff](docs/ai/BACKEND_MIGRATION.md).
+- `getInstructors` / `InstructorsInquiry` replace the provider directory. Batch ranks ACTIVE INSTRUCTOR using article/like/view weights 3/2/1, existing schedules and no property contribution. Local implementation does not imply live data/index changes.
 - Resort bookings require a minimum of two days (`resortMinDays`); equipment rentals require a minimum of two days (`equipmentMinDays`).
 - One `bookings` collection stores resort bookings, equipment rentals and instructor bookings. It includes the booking member, type, nullable target IDs, start/end dates, quantity, total price and status. `instructorId` references a member, not a separate instructor model.
 - Preserve DMM field spelling, collection casing and required/nullable flags, including nullable `equipments.resortId` and `views.memberId`. Generic comments, likes and views use their group enum plus reference ID; follows remain member-to-member, including instructors.

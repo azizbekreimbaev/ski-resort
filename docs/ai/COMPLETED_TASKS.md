@@ -1,5 +1,34 @@
 # Completed tasks and validation
 
+## Member → Instructor implementation: 2026-10-04
+
+- Removed AGENT from active enums, directory, diagnostic permissions and batch code. getInstructors/InstructorsInquiry replace the old provider contracts without aliases; only ACTIVE INSTRUCTOR Members match. Existing paging/sorting/nickname search/facet/Member-like behavior remains.
+- Preserved MemberInput.memberType, signup/login shape, hashing and JWT behavior. Explicit USER/omission signup works; privileged/null roles are rejected before hashing/creation. Self role changes and generic admin Instructor promotion/reassignment are denied; ordinary USER/ADMIN admin operations remain.
+- Added nine nullable Member instructor fields with exact instructorAudience scalar spelling and enums. Dedicated Instructor profile updates check current role/status, allowed fields, Resort references and prices, permit nullable clearing, and return a refreshed token.
+- Implemented separate instructorApplications model/module/DTOs and USER submit/latest-status plus ADMIN list/detail/approval/rejection. Immutable snapshots preserve rejected history; required experience/languages/level/audience, optional Resort/bio, no prices/certificates. Submission/review use transactions and a pending-only unique index declaration. Approval promotes the same ACTIVE USER atomically; rejection never modifies Member.
+- Migrated ranking/reset to ACTIVE INSTRUCTOR with existing article/like/view weights 3/2/1 and no property contribution. Retained schedules/async implementation. Updated shared Resort tests only for Member enum/query references.
+- Updated current instructions and client/domain handoff while preserving historical evidence and unchanged DMM. No live records/indexes, credentials, uploads, dependencies, frontend, unrelated domains or deployment were changed.
+
+### Fresh validation
+
+| Check | Result | Boundary |
+|---|---|---|
+| Both application TypeScript configurations, noEmit/incremental false | Passed | No server/database startup |
+| Separate compilation including all current source unit/integration specs | Passed | Temporary config with explicit Node/Jest type roots; scaffold e2e excluded |
+| Default Jest run, in-band/no-cache | Passed: 16 suites, 279 tests | Mocked persistence, actual guards, schema/DTO validation and generated GraphQL |
+| Isolated MongoDB integration suite | Skipped: 7 tests | Requires SKIRESORT_TEST_MONGO_URI on an explicitly isolated transaction-capable server; no connection made |
+| API and explicit batch builds | Passed | Bundles only; scheduler/server not started |
+| Scoped non-fixing ESLint on all new source/spec files | Passed: zero diagnostics | No global lint configuration changes |
+| Non-fixing ESLint on changed tracked TS plus new files | Failed: 631 errors, 6 warnings | Modified legacy files retain formatting/type debt; HEAD-source comparison also fails. Scoped count, not whole-project baseline |
+| Patch whitespace and changed-document local links | Passed | Historical diagnostics retain provenance |
+| Active source reference audit | Passed | Old role/query/typo terms occur only in negative tests; unrelated dependencies/tooling/history retained |
+
+Validation used available temporary Node v24.19.0 with installed dependencies. A formatting-induced incomplete directory object literal was caught and corrected before final compiler/test validation; the final run above passed. MongoDB atomicity/concurrency and installed-index guarantees remain unverified until the opt-in integration suite runs. Transaction/index capability and separately approved cleanup of any persisted AGENT records are rollout prerequisites; retained legacy values may otherwise fail GraphQL serialization. They must never automatically become INSTRUCTOR. Current ADMIN provenance and broader password-update/stale-JWT/upload/logging defects remain separately scoped.
+
+See [Member/Instructor client handoff](BACKEND_MIGRATION.md). Lessons, Equipment, Booking, payments and frontend remain deferred.
+
+## Earlier migration history
+
 Session migration date: 2026-10-04. Confirmed branding migration: Nestar → SkiResort. No Petoria migration was completed. The separately authorized Resort domain implementation is recorded below; later sections preserve the earlier branding-only work and historical validation.
 
 ## Approved development Resort index replacement: 2026-10-04

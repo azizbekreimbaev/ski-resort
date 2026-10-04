@@ -2,6 +2,8 @@
 
 Implementation date: 2026-10-04. This is the first business-domain migration after the completed branding migration. The source of truth for Resort fields is [SkiResort-Simple-ER.dmm](../../SkiResort-Simple-ER.dmm).
 
+Later Member/Instructor phase: MemberType now contains USER/ADMIN/INSTRUCTOR, and getInstructors replaces getAgents. Provider ranking now targets Instructors and excludes the property term. Resort production behavior remains unchanged; its tests were updated only for the shared Member enum/query. Earlier AGENT-preservation and Member-deferral statements below describe the Resort phase's historical boundary. See [current backend handoff](BACKEND_MIGRATION.md).
+
 Later user refinement on 2026-10-04: location and facilities now use the explicitly supplied `ResortLocation` and `ResortFacilities` enums. This adds enum constraints to the DMM's original string/array representation without changing the diagram or its nullability.
 
 ## Implemented domain

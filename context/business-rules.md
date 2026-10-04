@@ -1,5 +1,11 @@
 # Observed business rules
 
+## Current Member/Instructor rules: 2026-10-04
+
+Current roles are USER/ADMIN/INSTRUCTOR; AGENT below is historical. Public signup accepts USER/omission and rejects privileged/null roles. ACTIVE USER submits PENDING without promotion; current ACTIVE ADMIN approval transaction promotes the same Member. Rejection preserves USER/history; resubmission creates a new document. One PENDING per Member is constrained by a partial unique index. New operations recheck database role/status while preserving guards/JWT format.
+
+getInstructors returns ACTIVE INSTRUCTOR using existing directory paging/sorts/nickname text and like lookup. Instructors edit nullable fields through a dedicated operation without modifying application snapshots or general bio. Audience: instructorAudience, KIDS/ADULTS/FAMILY/PRIVATE. Rank: 3 * memberArticles + 2 * memberLikes + memberViews, with no property term. [Current handoff](../docs/ai/BACKEND_MIGRATION.md). Property/ranking rules below describe dated behavior.
+
 These rules describe source behavior, not independently approved product requirements. Known defects are marked and should not be preserved as intended policy.
 
 - Members: USER, AGENT, ADMIN; ACTIVE, BLOCK, DELETE. Signup defaults to USER/ACTIVE/PHONE through schema defaults, but the client can override role (defect). Login denies blocked/deleted accounts; later token checks do not (defect).

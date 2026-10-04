@@ -2,6 +2,21 @@
 
 As of 2026-10-04. This records decisions made in this session, not an assertion that the session designed every pre-existing subsystem. The confirmed target is SkiResort; no Petoria migration is planned.
 
+## Member → Instructor decisions: 2026-10-04
+
+- Remove AGENT from active Member enums, directory, diagnostic permissions and batch ranking. No aliases or automatic data conversion; final roles are USER/ADMIN/INSTRUCTOR. Historical references below retain their original meaning.
+- Preserve MemberInput.memberType and its current optionality. Accept USER/omission, reject ADMIN/INSTRUCTOR/null before the existing signup catch/hash/create flow. No new signup/login architecture.
+- Replace getAgents/AgentsInquiry with getInstructors/InstructorsInquiry, preserving directory paging/sorts/nickname text/facet/Member-like behavior and Member return types.
+- Use a separate instructorApplications collection with PENDING/APPROVED/REJECTED and immutable snapshots. Reapply after rejection with a new document; one PENDING per Member through a partial unique index.
+- Require experience/languages/level/audience on application; optional Resort/bio snapshot; prices only after approval and no certificate infrastructure. Exact scalar field is instructorAudience, values KIDS/ADULTS/FAMILY/PRIVATE.
+- Require transactions for submission and review, with a conditional Member timestamp write serializing submission against promotion. Approval promotes the same ACTIVE USER and copies reviewed instructor data; rejection does not change Member.
+- Keep existing guards/JWT format and add current database role/status checks to new services. Normal login refreshes role after promotion. Restrict self role updates and generic admin Instructor promotion; defer Instructor reassignment.
+- Add nullable instructor profile fields and a dedicated owner mutation. Instructor may edit/clear them without altering application history or general bio; no pricing/booking formula.
+- Migrate provider ranking to ACTIVE INSTRUCTOR with existing article/like/view weights 3/2/1; remove property contribution. Preserve cron times and scheduler implementation.
+- DMM, live data/indexes, uploads, dependencies, other domains and frontend remain unchanged. Lessons are separate later work. Transaction/index checks and explicitly approved legacy-role cleanup are rollout prerequisites.
+
+See [current Member/Instructor handoff](BACKEND_MIGRATION.md). Earlier role-preservation decisions below are historical and superseded for this phase.
+
 ## Resort-first decisions: 2026-10-04
 
 Later user refinement: add resortLevel to Resort uniqueness. Title/location/address/level is the current identity, with omitted/null level normalized to null. Name the four-field index `unique_resort_identity_with_level` so it can be created before selective removal of the obsolete three-field index. Initially documented the manual index change without executing it. Following a reproduced development failure, the user explicitly approved removing only the obsolete index; that development change was executed and verified, preserving the new index and all records. No automatic synchronization or unrelated index change was performed.

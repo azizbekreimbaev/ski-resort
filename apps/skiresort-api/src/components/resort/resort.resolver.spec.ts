@@ -170,7 +170,7 @@ describe('Resort requests through the existing guards', () => {
     expect(authService.verifyAuth).not.toHaveBeenCalled();
   });
 
-  it.each([MemberType.USER, MemberType.AGENT])(
+  it.each([MemberType.USER, MemberType.INSTRUCTOR])(
     'rejects resort catalog writes for %s',
     async (memberType) => {
       const guard = new RolesGuard(

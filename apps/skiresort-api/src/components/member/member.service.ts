@@ -1,8 +1,19 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose'
+import { ClientSession, Model, Types } from 'mongoose';
 import { Member, Members } from '../../libs/dto/member/member';
-import { AgentsInquiry, LoginInput, MemberInput, MembersInquiry } from '../../libs/dto/member/member.input';
+import {
+  InstructorsInquiry,
+  LoginInput,
+  MemberInput,
+  MembersInquiry,
+} from '../../libs/dto/member/member.input';
 import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { AuthService } from '../auth/auth.service';
@@ -17,6 +28,11 @@ import { LikeGroup } from '../../libs/enums/like.enum';
 import { LikeService } from '../like/like.service';
 import { Follower, Following, MeFollowed } from '../../libs/dto/follow/follow';
 import { lookupAuthMemberLiked } from '../../libs/config';
+import { validateMongoObjectId } from '../../libs/config';
+import { InstructorProfileUpdate } from '../../libs/dto/member/instructor-profile.update';
+import { InstructorApplication } from '../../libs/dto/instructor-application/instructor-application';
+import { InstructorApplicationStatus } from '../../libs/enums/instructor-application.enum';
+import { ResortService } from '../resort/resort.service';
 @Injectable()
 export class MemberService {
 
@@ -26,16 +42,22 @@ export class MemberService {
         private authService: AuthService,
         private viewService: ViewService,
         private likeService: LikeService,
-
+    private resortService: ResortService,
     ) { }
 
     public async signup(input: MemberInput): Promise<Member> {
+    if (
+      input.memberType !== undefined &&
+      input.memberType !== MemberType.USER
+    ) {
+      throw new BadRequestException(Message.NOT_ALLOWED_REQUEST);
+    }
         try {
 
             input.memberPassword = await this.authService.hashPassword(input.memberPassword)
 
             const result = await this.memberModel.create(input)
-            
+
             // AUTHENTICATION TOKENS
             result.accessToken = await this.authService.createToken(result)
             console.log("accessToken", result)
@@ -84,9 +106,17 @@ export class MemberService {
     }
 
     public async updateMember(memberId: ObjectId, input: MemberUpdate): Promise<Member> {
+    if (input.memberType !== undefined) {
+      const current = await this.memberModel
+        .findOne({ _id: memberId, memberStatus: MemberStatus.ACTIVE })
+        .exec();
+      if (!current || input.memberType !== current.memberType) {
+        throw new ForbiddenException(Message.NOT_ALLOWED_REQUEST);
+      }
+    }
         const result: Member | null = await this.memberModel.findOneAndUpdate(
             { _id: memberId, memberStatus: MemberStatus.ACTIVE },
-            input,
+      this.generalProfileFields(input),
             { new: true }
         )
 
@@ -150,9 +180,15 @@ export class MemberService {
         return result ? [{ followerId: followerId, followingId: followingId, myFollowing: true }] : []
     }
 
-    public async getAgents(memberId: ObjectId, input: AgentsInquiry): Promise<Members> {
+  public async getInstructors(
+    memberId: ObjectId,
+    input: InstructorsInquiry,
+  ): Promise<Members> {
         const { text } = input.search
-        const match: T = { memberType: MemberType.AGENT, memberStatus: MemberStatus.ACTIVE }
+    const match: T = {
+      memberType: MemberType.INSTRUCTOR,
+      memberStatus: MemberStatus.ACTIVE,
+    };
         const sort: T = { [input?.sort ?? "createdAt"]: input?.direction ?? Direction.DESC }
 
 
@@ -241,10 +277,29 @@ export class MemberService {
     }
 
     public async updateMemberByAdmin(input: MemberUpdate): Promise<Member> {
-
+    const match: Record<string, unknown> = { _id: input._id };
+    const values = this.generalProfileFields(input);
+    if (input.memberType !== undefined) {
+      const current = await this.memberModel.findOne({ _id: input._id }).exec();
+      if (!current)
+        throw new InternalServerErrorException(Message.UPDATE_FAILED);
+      if (!Object.values(MemberType).includes(input.memberType)) {
+        throw new ForbiddenException(Message.NOT_ALLOWED_REQUEST);
+      }
+      if (input.memberType !== current.memberType) {
+        if (
+          input.memberType === MemberType.INSTRUCTOR ||
+          current.memberType === MemberType.INSTRUCTOR
+        ) {
+          throw new ForbiddenException(Message.NOT_ALLOWED_REQUEST);
+        }
+        match.memberType = current.memberType;
+        values.memberType = input.memberType;
+      }
+    }
         const result = await this.memberModel.findOneAndUpdate(
-            { _id: input._id },
-            input,
+            match,
+            values,
             { new: true }
         ).exec()
 
@@ -253,6 +308,113 @@ export class MemberService {
         return result
     }
 
+  public async promoteMemberToInstructor(
+    memberId: ObjectId | Types.ObjectId,
+    application: InstructorApplication,
+    session: ClientSession,
+  ): Promise<Member> {
+    if (
+      !session.inTransaction() ||
+      application.applicationStatus !== InstructorApplicationStatus.APPROVED ||
+      application.memberId.toString() !== memberId.toString()
+    ) {
+      throw new ForbiddenException(Message.NOT_ALLOWED_REQUEST);
+    }
+    const result = await this.memberModel
+      .findOneAndUpdate(
+        {
+          _id: memberId,
+          memberStatus: MemberStatus.ACTIVE,
+          memberType: MemberType.USER,
+        },
+        {
+          $set: {
+            memberType: MemberType.INSTRUCTOR,
+            instructorResortId: application.instructorResortId ?? null,
+            instructorExperienceYears: application.instructorExperienceYears,
+            instructorLanguages: application.instructorLanguages,
+            instructorLevel: application.instructorLevel,
+            instructorAudience: application.instructorAudience,
+          },
+        },
+        { new: true, runValidators: true, session },
+      )
+      .exec();
+    if (!result)
+      throw new ConflictException('Only an active USER can be approved');
+    return result;
+  }
+
+  public async updateInstructorProfile(
+    memberId: ObjectId,
+    input: InstructorProfileUpdate,
+  ): Promise<Member> {
+    const current = await this.memberModel
+      .findOne({
+        _id: memberId,
+        memberType: MemberType.INSTRUCTOR,
+        memberStatus: MemberStatus.ACTIVE,
+      })
+      .exec();
+    if (!current)
+      throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
+    const values: Record<string, unknown> = {};
+    for (const field of [
+      'instructorResortId',
+      'instructorExperienceYears',
+      'instructorLanguages',
+      'instructorLevel',
+      'instructorAudience',
+      'instructorPrice1Week',
+      'instructorPrice2Weeks',
+      'instructorPrice3Weeks',
+      'instructorPrice4Weeks',
+    ] as const) {
+      if (input[field] !== undefined) values[field] = input[field];
+    }
+    if (input.instructorResortId != null) {
+      const resortId = validateMongoObjectId(input.instructorResortId);
+      values.instructorResortId = resortId;
+      await this.resortService.assertVisibleResort(resortId);
+    }
+    if (input.instructorLanguages != null) {
+      values.instructorLanguages = input.instructorLanguages.map((language) =>
+        language.trim(),
+      );
+    }
+    const result = await this.memberModel
+      .findOneAndUpdate(
+        {
+          _id: memberId,
+          memberType: MemberType.INSTRUCTOR,
+          memberStatus: MemberStatus.ACTIVE,
+        },
+        { $set: values },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (!result)
+      throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
+    result.accessToken = await this.authService.createToken(result);
+    return result;
+  }
+
+  private generalProfileFields(input: MemberUpdate): Record<string, unknown> {
+    const values: Record<string, unknown> = {};
+    for (const field of [
+      'memberStatus',
+      'memberPhone',
+      'memberNick',
+      'memberPassword',
+      'memberFullName',
+      'memberImage',
+      'memberAddress',
+      'memberDesc',
+    ] as const) {
+      if (input[field] !== undefined) values[field] = input[field];
+    }
+    return values;
+  }
 
     public async memberStatsEditor(input: StatisticModifier): Promise<Member> {
         const { _id, targetKey, modifier } = input

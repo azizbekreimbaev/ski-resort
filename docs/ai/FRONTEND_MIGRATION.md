@@ -2,6 +2,8 @@
 
 Target: SkiResort, confirmed by the user. Status: planned only. No Next.js frontend source exists in the inspected backend repository, and no frontend refactor has been completed in this session.
 
+Current Member backend change: getAgents/AgentsInquiry are replaced by getInstructors/InstructorsInquiry, returning only ACTIVE INSTRUCTOR Members. Final roles are USER/ADMIN/INSTRUCTOR; AGENT is not accepted. Normal signup retains MemberInput.memberType, accepts explicit USER or omission and rejects privileged/null roles. Implement application/status/admin-review and dedicated instructor-profile requests using [backend handoff](BACKEND_MIGRATION.md). Field spelling is instructorAudience. After approval, normal login supplies the INSTRUCTOR JWT. These are required future client changes, not completed frontend work. Agent mappings below describe the earlier branding-only snapshot and must not be treated as current contracts.
+
 Backend follow-up: the separately authorized Resort phase now retires Property operations/types and replaces catalog interactions with Resort contracts. The mappings below are the earlier branding-only plan. Before frontend work, inspect the actual checkout and apply the current [Resort client handoff](RESORT_IMPLEMENTATION.md); preserving Property requests is no longer a valid current-backend assumption.
 
 ## Step-by-step execution

@@ -1,5 +1,11 @@
 # Authentication and authorization
 
+## Member/Instructor phase update: 2026-10-04
+
+Signup preserves optional MemberInput.memberType but rejects ADMIN/INSTRUCTOR/null before hash/create; USER/omission work normally. Self-update prohibits role changes. Generic admin updates cannot promote to INSTRUCTOR or reassign an Instructor. Only transactional ADMIN approval promotes ACTIVE USER. Final roles: USER/ADMIN/INSTRUCTOR. No separate trusted public admin creation was found or added.
+
+JWT format, lifetime, guards and login remain unchanged. New application/review/profile services check current database role/status; normal login supplies INSTRUCTOR token after promotion. Earlier public role/self-promotion findings below are historical and addressed in this phase. Broader stale-JWT/password-update/logging findings remain. [Current handoff](../docs/ai/BACKEND_MIGRATION.md).
+
 ## Implemented flow
 
 `signup(MemberInput)` is public. Validation accepts nickname/password lengths 3–12, a nonempty phone and optional memberType/memberAuthType. MemberService hashes the password, creates the record, signs a token and returns Member. The provided memberType is not restricted to safe signup roles.

@@ -18,7 +18,7 @@ import { BoardArticleResolver } from '../board-article/board-article.resolver';
 
 jest.mock('../../libs/config', () => ({
   validateMongoObjectId: jest.fn(),
-  availableAgentSorts: [],
+  availableInstructorSorts: [],
   availableMemberSorts: [],
   availableBoardArticleSorts: [],
 }));
@@ -197,7 +197,7 @@ describe('Resort generated GraphQL schema', () => {
     const queries = schema.getQueryType()?.getFields();
     const mutations = schema.getMutationType()?.getFields();
     expect(queries?.getMember.type.toString()).toBe('Member!');
-    expect(queries?.getAgents.type.toString()).toBe('Members!');
+    expect(queries?.getInstructors.type.toString()).toBe('Members!');
     expect(queries?.getBoardArticles.type.toString()).toBe('BoardArticles!');
     expect(mutations?.signup.type.toString()).toBe('Member!');
     expect(mutations?.createBoardArticle.type.toString()).toBe('BoardArticle!');

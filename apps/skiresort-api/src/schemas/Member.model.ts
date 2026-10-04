@@ -1,6 +1,11 @@
 import { Schema } from "mongoose";
-import { MemberAuthType, MemberStatus, MemberType } from "../libs/enums/member.enum";
-
+import {
+  InstructorAudience,
+  InstructorLevel,
+  MemberAuthType,
+  MemberStatus,
+  MemberType,
+} from '../libs/enums/member.enum';
 
 const MemberSchema = new Schema({
     memberType: {
@@ -8,7 +13,6 @@ const MemberSchema = new Schema({
         enum: MemberType,
         default: MemberType.USER
     },
-
 
     memberStatus: {
         type: String,
@@ -28,7 +32,6 @@ const MemberSchema = new Schema({
         index: { unique: true, sparse: true },
         required: true
     },
-
 
     memberNick: {
         type: String,
@@ -58,6 +61,72 @@ const MemberSchema = new Schema({
 
     memberDesc: {
         type: String,
+    },
+
+    instructorResortId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Resort',
+      default: null,
+    },
+    instructorExperienceYears: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) =>
+          value == null || Number.isInteger(value),
+      },
+    },
+    instructorLanguages: {
+      type: [String],
+      default: null,
+      validate: {
+        validator: (value: string[] | null) =>
+          value == null ||
+          value.every((language) => language.trim().length > 0),
+      },
+    },
+    instructorLevel: { type: String, enum: InstructorLevel, default: null },
+    instructorAudience: {
+      type: String,
+      enum: InstructorAudience,
+      default: null,
+    },
+    instructorPrice1Week: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) =>
+          value == null || Number.isFinite(value),
+      },
+    },
+    instructorPrice2Weeks: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) =>
+          value == null || Number.isFinite(value),
+      },
+    },
+    instructorPrice3Weeks: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) =>
+          value == null || Number.isFinite(value),
+      },
+    },
+    instructorPrice4Weeks: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) =>
+          value == null || Number.isFinite(value),
+      },
     },
 
     memberProperties: {
@@ -118,11 +187,9 @@ const MemberSchema = new Schema({
     deletedAt: {
         type: Date
     }
-
-
-},
+  },
     { timestamps: true, collection: "members" }
 
 )
 
-export default MemberSchema
+export default MemberSchema;

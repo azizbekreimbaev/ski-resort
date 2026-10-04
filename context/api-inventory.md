@@ -1,5 +1,11 @@
 # API inventory
 
+## Current Member/Instructor contract: 2026-10-04
+
+The inventory below is a historical pre-domain snapshot. Current Member queries use getInstructors(InstructorsInquiry) instead of getAgents(AgentsInquiry); return type remains Members. Final MemberType is USER/ADMIN/INSTRUCTOR. chechAuthRoles preserves its spelling and permits USER/INSTRUCTOR. Existing signup/login/getMember/general profile/admin/follow/social operations remain, with public signup USER-only and self/admin role-write restrictions.
+
+New operations: createInstructorApplication (USER), getMyInstructorApplication (authenticated owner), getAllInstructorApplicationsByAdmin/getInstructorApplicationByAdmin/approveInstructorApplicationByAdmin/rejectInstructorApplicationByAdmin (ADMIN), updateInstructorProfile (INSTRUCTOR). New services verify current database role/status. Exact arguments/output and rollout limits: [current handoff](../docs/ai/BACKEND_MIGRATION.md). Old Property operations were retired by Resort; do not restore them or AGENT aliases.
+
 Code-first GraphQL, default `/graphql` route (no custom path configured). This is a static source inventory, not an introspection snapshot of a running service. Every operation below has its resolver/guard/input signature. Exact DTO fields are in `dto-reference.md`. GraphQL selection sets control returned fields.
 
 | Operation | Kind | Return declaration | Client arguments | Guard / role | Source |

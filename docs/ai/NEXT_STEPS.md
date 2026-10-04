@@ -1,6 +1,17 @@
 # Next-session priorities
 
-Prepared 2026-10-04. This is the requested "tomorrow" backlog for the next working session, not a scheduled job or authorization to implement unrelated repairs. Target remains SkiResort; domain conversion is deferred.
+Prepared 2026-10-04. Backlogs are not authorization to implement unrelated work. Target remains SkiResort; Resort and Member/Instructor source changes are implemented locally, with rollout work still pending.
+
+## Current priorities after Member → Instructor implementation
+
+1. Verify the workflow against an explicitly isolated transaction-capable MongoDB server using the opt-in integration suite; mocked tests do not prove installed index or rollback behavior.
+2. Before rollout, explicitly plan and approve cleanup of persisted AGENT records, if any. Do not automatically turn them into INSTRUCTOR; removing the enum can cause GraphQL serialization failures for retained legacy records.
+3. Verify the pending-application index without broad index synchronization or unrelated changes. No live index operations were performed in this implementation.
+4. Update the actual frontend query/input contracts for getInstructors/InstructorsInquiry, final role enums and instructorAudience; inspect its checkout before editing. Follow [current backend handoff](BACKEND_MIGRATION.md).
+5. Specify Lessons separately; Instructor ownership is established, but no Lesson/booking/payment domain was implemented. Equipment and Booking also remain deferred.
+6. Address broader auth/password/upload/logging and scheduler reliability findings in separately authorized work; the new workflow only adds current-role checks and required role-write restrictions.
+
+The priorities below are earlier historical backlogs, superseded where Member/Instructor implementation is now recorded above.
 
 ## Current priorities after Resort implementation
 
