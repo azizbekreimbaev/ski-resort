@@ -1,5 +1,9 @@
 # Backend migration: Nestar → SkiResort
 
+## FAQ backend: 2026-10-07
+
+Implemented FAQ GraphQL public reads and ACTIVE ADMIN CRUD using the existing Events pattern, with plain text question/answer and DRAFT/PUBLISHED status. Separate `faqs` collection; no DMM change, frontend or live migration. See [FAQ handoff](FAQ_IMPLEMENTATION.md) and [fresh checks](COMPLETED_TASKS.md).
+
 ## Events domain: 2026-10-06
 
 Implemented a separate `events` collection with scheduled dates, 1–5 images, optional Resort/location, DRAFT/PUBLISHED status, public published-only reads and ACTIVE ADMIN CRUD/uploads. Permanent removal retains files and references; generic upload targets reserve the Events namespace. Events are an approved extension beyond the unchanged DMM. See [client handoff](EVENT_IMPLEMENTATION.md) and [fresh validation](COMPLETED_TASKS.md). No live database migration, frontend or deployment is claimed.

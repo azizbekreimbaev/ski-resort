@@ -1,5 +1,13 @@
 # Completed tasks and validation
 
+## FAQ backend: 2026-10-07
+
+Implemented separate faqs schema, enum, DTOs and registered resolver/service/module. Public list/detail expose PUBLISHED only; admin create/update/remove/detail/list use ADMIN guards and current database ACTIVE ADMIN checks. Required trimmed question/answer, DRAFT default, immutable server-derived creator, partial updates and permanent removal follow Events. Added [FAQ client handoff](FAQ_IMPLEMENTATION.md) and updated migration decisions/next steps. DMM, frontend, dependencies and live data are unchanged.
+
+Fresh checks: three focused FAQ Jest suites passed (38 tests), covering service behavior, authorization metadata/guards, generated GraphQL, DTO/schema validation, search and pagination. API and batch no-emit compilation and both production builds passed. FAQ test compilation passed separately. Scoped non-fixing ESLint passed with zero diagnostics after correcting an unnecessary async/await. Git whitespace and local Markdown link checks passed.
+
+Compilation of all source specs was also attempted and failed on the unchanged Member test at apps/skiresort-api/src/components/member/member.service.spec.ts:331 (TS2322: null is not assignable to T). No unrelated repair was made. Validation used the discovered local Node v20.19.0 runtime and installed dependencies; sandbox path-resolution restrictions required elevated local validation. Tests use mocked persistence and generated schemas; no live MongoDB aggregation, full bootstrap, frontend or deployment was exercised.
+
 ## Events CRUD domain: 2026-10-06
 
 Implemented Event schema/DTOs/enum/module/service/resolver and registered the module. The new `events` collection has required scheduled dates, 1–5 distinct existing Event image paths, nullable location/Resort association, immutable server-derived creator, timestamps and default DRAFT/PUBLISHED status. Public list/detail expose PUBLISHED including past Events; ACTIVE ADMIN operations manage all Events. Updates preserve omitted fields and condition date edits on the previously read pair. Removal permanently deletes only the Event document.

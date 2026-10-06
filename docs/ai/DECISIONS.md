@@ -1,5 +1,9 @@
 # Migration decisions
 
+## FAQ backend: 2026-10-07
+
+Separate `faqs` collection beyond the unchanged DMM. Plain text question/answer, DRAFT default and PUBLISHED visibility; duplicates allowed. Public published-only reads; all management uses ADMIN guards plus current ACTIVE ADMIN checks. Any active admin may manage entries; creator is immutable. Partial updates preserve omitted fields; permanent removal has no cascades. No images, categories, custom ordering, frontend or live migration. See [FAQ handoff](FAQ_IMPLEMENTATION.md).
+
 ## Events decisions: 2026-10-06
 
 - Separate Events domain beyond the unchanged DMM; no reuse of Notice EVENT category.

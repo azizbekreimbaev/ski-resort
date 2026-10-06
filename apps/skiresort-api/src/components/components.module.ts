@@ -1,4 +1,5 @@
 import { EquipmentModule } from './equipment/equipment.module';
+import { FaqModule } from './faq/faq.module';
 import { EventModule } from './event/event.module';
 import { Module } from '@nestjs/common';
 import { MemberModule } from './member/member.module';
@@ -18,6 +19,7 @@ import { InstructorApplicationModule } from './instructor-application/instructor
     ResortModule,
     EquipmentModule,
     EventModule,
+    FaqModule,
     AuthModule,
     CommentModule,
     LikeModule,

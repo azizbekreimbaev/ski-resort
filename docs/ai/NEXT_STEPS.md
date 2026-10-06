@@ -1,5 +1,9 @@
 # Next-session priorities
 
+## FAQ backend: 2026-10-07
+
+FAQ backend is implemented locally. Integrate the public published-only FAQ reads and admin management in the actual frontend checkout using [FAQ handoff](FAQ_IMPLEMENTATION.md). Isolated MongoDB aggregation and full bootstrap verification remain separate; no frontend or deployment is claimed.
+
 ## Events follow-up: 2026-10-06
 
 Events CRUD is implemented locally; use [Events handoff](EVENT_IMPLEMENTATION.md) for public/admin contracts and multipart uploads. Verify actual frontend integration in its own checkout and aggregation/concurrent date updates in an explicitly isolated MongoDB environment. No frontend work, live migration or deployment occurred. Existing Booking and Instructor rollout priorities remain separate.
