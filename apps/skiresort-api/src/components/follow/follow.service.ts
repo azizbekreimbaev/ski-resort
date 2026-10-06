@@ -25,21 +25,29 @@ export class FollowService {
         const targetMember = await this.memberService.getMember(null, followingId);
         if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-        const result = await this.registerSubscription(followerId, followingId);
+        const { result, created } = await this.registerSubscription(followerId, followingId);
 
-        await this.memberService.memberStatsEditor({ _id: followerId, targetKey: 'memberFollowings', modifier: 1 });
-        await this.memberService.memberStatsEditor({ _id: followingId, targetKey: 'memberFollowers', modifier: 1 });
+        if (created) {
+            await this.memberService.memberStatsEditor({ _id: followerId, targetKey: 'memberFollowings', modifier: 1 });
+            await this.memberService.memberStatsEditor({ _id: followingId, targetKey: 'memberFollowers', modifier: 1 });
+        }
 
         return result;
     }
 
-    private async registerSubscription(followerId: ObjectId, followingId: ObjectId): Promise<Follower> {
+    private async registerSubscription(followerId: ObjectId, followingId: ObjectId): Promise<{ result: Follower; created: boolean }> {
         try {
-            return await this.followModel.create({
+            const result = await this.followModel.create({
                 followingId: followingId,
                 followerId: followerId,
             });
+            return { result, created: true };
         } catch (err) {
+            // The unique pair index also protects simultaneous subscribe requests.
+            if ((err as { code?: number })?.code === 11000) {
+                const result = await this.followModel.findOne({ followingId, followerId }).exec();
+                if (result) return { result, created: false };
+            }
             console.log('Error, Service.model:', err instanceof Error ? err.message : err);
             throw new BadRequestException(Message.CREATE_FAILED);
         }

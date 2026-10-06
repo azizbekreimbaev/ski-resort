@@ -19,7 +19,7 @@ The API now registers Resort instead of Property. It retains the existing NestJS
 | `resortTitle`, `resortAddress` | String! | Required |
 | `resortLocation` | ResortLocation! | Required; stored enum string |
 | `resortPricePerDay` | Float! | Required, finite and nonnegative |
-| `resortMinDays` | Int! | Required, integer >= 2 |
+| `resortMinDays` | Int! | Required, integer >= 1 |
 | `resortImages` | [String!]! | Required array; an empty array is allowed |
 | `resortViews`, `resortLikes`, `resortComments` | Int! | Required nonnegative integer counters |
 | `createdAt`, `updatedAt` | DateTime! | Required automatic timestamps |
@@ -28,7 +28,7 @@ The API now registers Resort instead of Property. It retains the existing NestJS
 | `resortDesc` | String | Nullable |
 | `deletedAt` | DateTime | Nullable, server-managed |
 
-Creation defaults to ACTIVE, minimum days 2, and zero counters. The authenticated admin becomes `memberId`; clients cannot assign ownership, status, counters or timestamps during creation. Output-only `memberData` and `meLiked` are aggregation fields, not persisted Resort fields. Missing owners do not discard resorts, and joins exclude passwords, access tokens and authorization values.
+Creation defaults to ACTIVE, minimum days 1, and zero counters. The authenticated admin becomes `memberId`; clients cannot assign ownership, status, counters or timestamps during creation. Output-only `memberData` and `meLiked` are aggregation fields, not persisted Resort fields. Missing owners do not discard resorts, and joins exclude passwords, access tokens and authorization values.
 
 Later user-requested uniqueness refinement: the combination of title, location, address and level identifies a Resort globally, across admins and all statuses, including DELETE. Different levels permit otherwise identical resorts. Omitted/null levels share the same identity value, null. Creation trims title/address and checks duplicates using case-insensitive English collation (`strength: 2`). Changing prices, images or ownership does not make the same identity a new Resort. Creation rejects duplicates with `A resort with this title, location, address and level already exists`. Permanent removal releases that identity.
 
@@ -51,7 +51,7 @@ if (db.resorts.getIndexes().some(index => index.name === "unique_resort_identity
 }
 ```
 
-Image arrays of strings, nonnegative pricing, default values and admin-only management are implementation choices. Location/facility enum values follow the later explicit user instruction. The DMM establishes the fields, original status/level enums and two-day minimum, but does not establish those additional policies. No booking-duration enforcement or booking availability is implemented because Booking remains deferred.
+Image arrays of strings, nonnegative pricing, default values and admin-only management are implementation choices. Location/facility enum values follow the later explicit user instruction. The DMM establishes the fields, original status/level enums and one-day minimum (updated by user instruction on 2026-10-06), but does not establish those additional policies. No booking-duration enforcement or booking availability is implemented because Booking remains deferred.
 
 `ResortLocation` values: PYEONGCHANG, JEONGSEON, HONGCHEON, CHUNCHEON, WONJU, HOENGSEONG, YANGYANG, GWANGJU_GYEONGGI, ICHEON, POCHEON, MUJU.
 
@@ -73,7 +73,7 @@ Image arrays of strings, nonnegative pricing, default values and admin-only mana
 
 `Resorts` returns `{ list, metaCounter }`, retaining the existing array of `TotalCounter` objects. An empty result returns empty arrays. Inputs use GraphQL String IDs and validate 24-character hexadecimal ObjectIds before aggregation.
 
-`ResortInput` requires title, location, address, daily price and images; minimum days is optional with default 2. Level, facilities and description are nullable. `ResortUpdate` requires `_id`; content fields and status are optional. Omitted values are unchanged; nullable fields can be cleared with null, while null is rejected for required persisted fields. Ownership, counters and timestamps are not update fields.
+`ResortInput` requires title, location, address, daily price and images; minimum days is optional with default 1. Level, facilities and description are nullable. `ResortUpdate` requires `_id`; content fields and status are optional. Omitted values are unchanged; nullable fields can be cleared with null, while null is rejected for required persisted fields. Ownership, counters and timestamps are not update fields.
 
 Update requests must supply an object for `$input`, not the ID string itself. GraphQL rejects a string before guards, validation pipes or resolvers execute. The resolver uses the existing `shapeIntoMongoObjectId` approach to convert `input._id` after the global validation pipe validates the input; the service receives the converted ID. Validated scalar/search ID conversion also delegates to this existing helper. Removal passes the ObjectId directly to its separate delete query.
 

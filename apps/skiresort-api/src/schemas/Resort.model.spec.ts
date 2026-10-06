@@ -61,7 +61,7 @@ describe('Resort persistence contract', () => {
     expect(resort.validateSync()).toBeUndefined();
     expect(resort.resortTitle).toBe('Alpine Resort');
     expect(resort.resortStatus).toBe(ResortStatus.ACTIVE);
-    expect(resort.resortMinDays).toBe(2);
+    expect(resort.resortMinDays).toBe(1);
     expect(resort.resortViews).toBe(0);
     expect(resort.resortLikes).toBe(0);
     expect(resort.resortComments).toBe(0);
@@ -108,7 +108,7 @@ describe('Resort persistence contract', () => {
   });
 
   it.each([
-    { resortMinDays: 1 },
+    { resortMinDays: 0 },
     { resortMinDays: 2.5 },
     { resortPricePerDay: -1 },
     { resortPricePerDay: Infinity },

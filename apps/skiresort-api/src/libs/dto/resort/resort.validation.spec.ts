@@ -18,14 +18,14 @@ const validResort = {
 };
 
 describe('Resort input validation', () => {
-  it('defaults the minimum stay to two and permits empty arrays', () => {
+  it('defaults the minimum stay to one and permits empty arrays', () => {
     const input = plainToInstance(ResortInput, {
       ...validResort,
       resortFacilities: [],
     });
 
     expect(validateSync(input)).toEqual([]);
-    expect(input.resortMinDays).toBe(2);
+    expect(input.resortMinDays).toBe(1);
   });
 
   it.each(Object.values(ResortLocation))(
@@ -68,7 +68,22 @@ describe('Resort input validation', () => {
     ).toBe(true);
   });
 
-  it.each([1, 2.5, null])('rejects invalid minimum stay %s', (days) => {
+  it.each([1, 2, 3])('accepts minimum stay %s on create and update', (days) => {
+    const input = plainToInstance(ResortInput, { ...validResort, resortMinDays: days });
+    const update = plainToInstance(ResortUpdate, {
+      _id: '507f1f77bcf86cd799439011', resortMinDays: days,
+    });
+    expect(validateSync(input)).toEqual([]);
+    expect(validateSync(update)).toEqual([]);
+  });
+
+  it.each([0, -1, 1.5, null])('rejects invalid minimum stay on update %s', (days) => {
+    const update = plainToInstance(ResortUpdate, {
+      _id: '507f1f77bcf86cd799439011', resortMinDays: days,
+    });
+    expect(validateSync(update).some((error) => error.property === 'resortMinDays')).toBe(true);
+  });
+  it.each([0, -1, 1.5, null])('rejects invalid minimum stay %s', (days) => {
     const input = plainToInstance(ResortInput, {
       ...validResort,
       resortMinDays: days,
@@ -192,6 +207,38 @@ describe('Resort input validation', () => {
 
 describe('Resort update validation', () => {
   const id = '64b000000000000000000001';
+
+  it.each([1, 2])(
+    'accepts a minimum stay of %s days on create and update',
+    (days) => {
+      expect(
+        validateSync(
+          plainToInstance(ResortInput, {
+            ...validResort,
+            resortMinDays: days,
+          }),
+        ),
+      ).toEqual([]);
+      expect(
+        validateSync(
+          plainToInstance(ResortUpdate, {
+            _id: id,
+            resortMinDays: days,
+          }),
+        ),
+      ).toEqual([]);
+    },
+  );
+
+  it.each([0, -1, 1.5])('rejects invalid update minimum stay %s', (days) => {
+    const update = plainToInstance(ResortUpdate, {
+      _id: id,
+      resortMinDays: days,
+    });
+    expect(
+      validateSync(update).some((error) => error.property === 'resortMinDays'),
+    ).toBe(true);
+  });
 
   it('allows omitting fields and clearing nullable fields', () => {
     const update = plainToInstance(ResortUpdate, {

@@ -1,10 +1,14 @@
 # Next-session priorities
 
+## Events follow-up: 2026-10-06
+
+Events CRUD is implemented locally; use [Events handoff](EVENT_IMPLEMENTATION.md) for public/admin contracts and multipart uploads. Verify actual frontend integration in its own checkout and aggregation/concurrent date updates in an explicitly isolated MongoDB environment. No frontend work, live migration or deployment occurred. Existing Booking and Instructor rollout priorities remain separate.
+
 ## Current priorities after Equipment catalog implementation
 
 The user reported Equipment creation working after the Postman smoke test on 2026-10-04. See the [request](EQUIPMENT_IMPLEMENTATION.md#postman-createequipment-smoke-test) and [scope of that report](COMPLETED_TASKS.md#equipment-creation-manual-test-report-2026-10-04).
 
-1. Plan Booking as the next domain step before implementation. Review the current DMM and completed Resort/Equipment/Instructor contracts, then agree on time boundaries, selected package price snapshots, quantity, availability/concurrency, cancellation and payment boundaries. The Equipment minimum comes from configured hour packages; Resort retains its two-day minimum. No Booking policy or implementation is approved by this backlog.
+1. Plan Booking as the next domain step before implementation. Review the current DMM and completed Resort/Equipment/Instructor contracts, then agree on time boundaries, selected package price snapshots, quantity, availability/concurrency, cancellation and payment boundaries. The Equipment minimum comes from configured hour packages; Resort now defaults to a one-day minimum. No Booking policy or implementation is approved by this backlog.
 2. Exercise the remaining Equipment contracts and actual frontend integration using the [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md). Inspect the frontend checkout before updating its documents/code generation; no frontend source is present here.
 3. Verify Equipment aggregation, conditional-update concurrency and interaction compensation in an explicitly isolated MongoDB environment; the reported creation smoke test and mocked/schema/GraphQL tests do not prove these behaviors.
 4. Specify purchases/orders separately if needed; equipmentPurchasable and purchase price only describe catalog capability.

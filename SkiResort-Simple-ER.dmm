@@ -497,7 +497,7 @@
 			"id": "10ac5f36-7431-4526-9fad-7b9944245a42",
 			"visible": true,
 			"name": "resorts",
-			"desc": "Bookable ski resorts. Business rule: minimum booking is 2 days.",
+			"desc": "Bookable ski resorts. Business rule: minimum booking is 1 day.",
 			"estimatedSize": "",
 			"cols": [
 				{

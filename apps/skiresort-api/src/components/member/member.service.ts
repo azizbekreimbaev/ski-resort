@@ -27,7 +27,7 @@ import { LikeInput } from '../../libs/dto/like/like.input';
 import { LikeGroup } from '../../libs/enums/like.enum';
 import { LikeService } from '../like/like.service';
 import { Follower, Following, MeFollowed } from '../../libs/dto/follow/follow';
-import { lookupAuthMemberLiked } from '../../libs/config';
+import { lookupAuthMemberFollowed, lookupAuthMemberLiked } from '../../libs/config';
 import { validateMongoObjectId } from '../../libs/config';
 import { InstructorProfileUpdate } from '../../libs/dto/member/instructor-profile.update';
 import { InstructorApplication } from '../../libs/dto/instructor-application/instructor-application';
@@ -204,7 +204,8 @@ export class MemberService {
                     list: [
                         { $skip: (input.page - 1) * input.limit },
                         { $limit: input.limit },
-                        lookupAuthMemberLiked(memberId)
+                        lookupAuthMemberLiked(memberId),
+                        lookupAuthMemberFollowed({ followerId: memberId, followingId: '$_id' })
                     ],
                     metaCounter: [{ $count: 'total' }]
                 }

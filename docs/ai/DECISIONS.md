@@ -1,5 +1,24 @@
 # Migration decisions
 
+## Events decisions: 2026-10-06
+
+- Separate Events domain beyond the unchanged DMM; no reuse of Notice EVENT category.
+- Required scheduled start/end timestamps, end strictly after start, past dates accepted; optional Resort association (ACTIVE/SOLD_OUT when supplied) and location text.
+- Require 1–5 distinct existing uploaded images. Upload first through a dedicated ACTIVE ADMIN operation; reserve generic `events` targets. Existing PNG/JPEG formats, public static storage and 15 MB middleware limit remain.
+- Default DRAFT; public reads expose PUBLISHED including past Events. Any current ACTIVE ADMIN can manage all Events; server derives immutable creator.
+- Partial updates validate dates with conditional predicates; permanent removal retains files and references. No social counters, bookings, registrations, payments, expiration or frontend.
+
+See [Events handoff](EVENT_IMPLEMENTATION.md).
+
+## Resort minimum stay: 2026-10-06
+
+User override: Resort minimum stay is now one day. Creation defaults to 1; create and admin-update values must be integers >= 1. Schema validation and the DMM rule match. Existing records are unchanged; Booking remains deferred. Earlier two-day statements describe historical behavior.
+
+## Resort minimum duration: 2026-10-06
+
+The user changed the Resort minimum to one day, superseding earlier two-day references. Create/update DTOs require positive whole days; GraphQL, service and schema creation defaults are 1. The DMM and current handoff reflect this rule. Existing records are not rewritten; Booking remains deferred.
+
+
 ## Update-flow review: 2026-10-04
 
 Latest explicit clarification: `updateComment` must match the original project flow exactly. The resolver converts `_id` with `shapeIntoMongoObjectId`; the service performs one `findOneAndUpdate` filtered by `_id`, authenticated `memberId` and ACTIVE status, passing `input` with `{ new: true }`. Deletion through this operation only sets commentStatus to DELETE. No target lookup, counter decrement, compensation, retry, manual timestamp or extra service validation. A missing/non-owned/already-deleted comment fails with UPDATE_FAILED. This supersedes the earlier counter-aware owner-deletion design for every comment group. CommentUpdate DTO and separate creation/admin-removal operations remain unchanged. Instructor profile updates still enforce current ACTIVE INSTRUCTOR state in the write predicate. See [review history](COMPLETED_TASKS.md#update-flow-simplification-review-2026-10-04).

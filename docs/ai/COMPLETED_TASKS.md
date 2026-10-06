@@ -1,5 +1,51 @@
 # Completed tasks and validation
 
+## Events CRUD domain: 2026-10-06
+
+Implemented Event schema/DTOs/enum/module/service/resolver and registered the module. The new `events` collection has required scheduled dates, 1–5 distinct existing Event image paths, nullable location/Resort association, immutable server-derived creator, timestamps and default DRAFT/PUBLISHED status. Public list/detail expose PUBLISHED including past Events; ACTIVE ADMIN operations manage all Events. Updates preserve omitted fields and condition date edits on the previously read pair. Removal permanently deletes only the Event document.
+
+Added dedicated admin Event uploads using the existing shared storage helper, fixed `uploads/events` destination, PNG/JPEG MIME/extension checks and whole-request failure cleanup. Existing middleware retains its 15,000,000-byte per-file limit. Generic image upload mutations now reject the reserved Events namespace; unrelated upload behavior and pre-existing stream-repair edits are preserved. No DMM edit, dependency change, live database operation, frontend, booking/registration/payment/social integration or deployment.
+
+Fresh executed checks:
+
+| Check | Result | Boundary |
+|---|---|---|
+| Four focused Jest suites | Passed: 63 tests | Event service, generated GraphQL/real role guards, Mongoose schema and generic upload regressions; temporary files and mocked persistence |
+| API and batch TypeScript noEmit/incremental false | Passed | No startup/database connection |
+| Separate Event/upload test compilation | Passed | Temporary explicit test config; application configs exclude tests |
+| API and explicit batch production builds | Passed | Bundles generated; applications/scheduler not executed |
+| Scoped non-fixing ESLint | Passed: zero diagnostics | All new Event source/spec files and shared image-upload helper; no whole-repository lint claim |
+| Local Markdown links and Git patch whitespace | Passed | Event handoff and affected migration documents; existing workspace edits retained |
+
+Validation used the discovered local Node v20.19.0 runtime and existing installed dependencies. Initial scoped lint/type diagnostics were corrected and final checks passed. Live MongoDB aggregation and conditional-update concurrency, full bootstrap, multipart HTTP transport/size-limit behavior and deployment were not exercised. The image size limit is existing middleware configuration, not newly proven by the isolated tests. Uploaded files remain public static assets, including draft/unattached images. See [Events client handoff and examples](EVENT_IMPLEMENTATION.md).
+
+## Resort one-day minimum validation: 2026-10-06
+
+Changed create/update validation, GraphQL/service/schema defaults and DMM minimum to 1 day. Larger positive whole-day minima remain valid. Updated current handoff and instructions; preserved existing stored records and unrelated workspace edits.
+
+Fresh checks: four isolated Resort suites passed (114 tests); after adding further boundary cases, the DTO suite passed (54 tests). API and batch TypeScript no-emit checks passed. Patch whitespace check passed. No live MongoDB, full bootstrap, Booking enforcement or deployment was tested.
+
+## Resort minimum duration: 2026-10-06
+
+The user changed the Resort minimum to one day, superseding earlier two-day references. Create/update DTOs require positive whole days; GraphQL, service and schema creation defaults are 1. The DMM and current handoff reflect this rule. Existing records are not rewritten; Booking remains deferred.
+
+Fresh validation: four focused Jest suites passed (114 tests), both API and batch TypeScript noEmit/incremental false checks passed, and git diff --check passed. Tests exercise DTO boundaries, schema defaults, GraphQL defaults and mocked service creation. No live database operations, application startup or deployment.
+
+
+## Image upload stream repair: 2026-10-06
+
+The reported `Unexpected error value: false` came from imageUploader rejecting a destination stream error with `false`, losing the original filesystem error. Both upload mutations now use a shared image-upload helper that creates missing destination directories, opens a new file exclusively, uses stream.pipeline for source/destination errors and removes its partial file on failure. Single uploads propagate the real error. Existing relative URLs, guards, MIME whitelist and multi-upload partial-success handling remain unchanged. Target paths accept slash-separated letters/digits/underscore/hyphen directory names and reject absolute paths/traversal before creating directories. The original underlying filesystem error cannot be recovered from the supplied log; missing directories are a supported repair case, not a confirmed diagnosis of that request.
+
+Fresh validation: 12 isolated filesystem/resolver Jest tests passed, API TypeScript noEmit/incremental false passed, non-fixing lint on the new helper/spec passed, and patch whitespace passed. Tests use generated temporary directories and cover missing folders, successful single/multi upload, source errors/cleanup, destination errors, existing-file preservation, target validation and retained filename/MIME checks. Initial test failures exposed and resolved an immediate-source-error cleanup race. No database, full server startup, deployment or live client upload test. Batch behavior and broader upload content verification/symlink policies were outside this fix; MIME remains client-declared. Existing user changes were preserved.
+
+## Instructor directory follow state and repeated subscribe: 2026-10-05
+
+Added the existing authenticated-member follow lookup to the paginated getInstructors list, using the requesting member as followerId and each instructor's _id as followingId. Results now populate meFollowed alongside meLiked; clients must select meFollowed { myFollowing } to display the saved state after refresh.
+
+Repeated subscribe requests now return the existing relationship after a duplicate-key rejection for that pair. Only the successful new insert increments memberFollowings/memberFollowers, including competing insert requests. The unique followingId/followerId schema index, GraphQL mutation contract, self-follow rejection and unsubscribe behavior remain unchanged. Other creation failures still fail; no stored counters or relationships were repaired.
+
+Fresh validation: two focused Jest suites passed (31 tests), and both API/batch TypeScript noEmit checks passed. Tests cover the directory pipeline, anonymous lookup, new/duplicate/concurrent subscription behavior, counter increments, unrelated errors, self-follow rejection and retained unique index. Persistence/concurrency are mocked; no live MongoDB integration, frontend edits, application startup, index changes or deployment. Existing follow creation and counter updates remain separate writes.
+
 ## Exact original comment update flow restored: 2026-10-04
 
 The user clarified that the preceding simplification still added unwanted deletion logic. Replaced updateComment with the supplied original flow: resolver converts `_id` using shapeIntoMongoObjectId; service makes one findOneAndUpdate using `_id`, authenticated memberId and ACTIVE status, passes input directly with new=true, throws UPDATE_FAILED on no match and returns the result. CommentUpdate DTO remains unchanged. Removed the catalog deletion helper, preliminary reads, counter updates, compensation, retries, manual timestamps and additional service validation from this operation. Setting DELETE is only a status change; subsequent owner updates fail the ACTIVE predicate. Creation and separate admin removal remain unchanged. This supersedes the owner-deletion behavior described in earlier entries below.

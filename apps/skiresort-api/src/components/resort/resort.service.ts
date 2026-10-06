@@ -96,7 +96,7 @@ export class ResortService {
         ...identity,
         memberId,
         resortStatus: ResortStatus.ACTIVE,
-        resortMinDays: input.resortMinDays ?? 2,
+        resortMinDays: input.resortMinDays ?? 1,
         resortViews: 0,
         resortLikes: 0,
         resortComments: 0,

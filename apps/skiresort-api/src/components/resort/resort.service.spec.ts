@@ -136,7 +136,7 @@ describe('ResortService', () => {
     expect(result).toMatchObject({
       memberId: adminId,
       resortStatus: ResortStatus.ACTIVE,
-      resortMinDays: 2,
+      resortMinDays: 1,
       resortViews: 0,
       resortLikes: 0,
       resortComments: 0,

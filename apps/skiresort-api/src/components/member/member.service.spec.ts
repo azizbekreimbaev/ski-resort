@@ -12,6 +12,7 @@ import {
   InstructorLevel,
 } from '../../libs/enums/member.enum';
 import { InstructorApplicationStatus } from '../../libs/enums/instructor-application.enum';
+import { lookupAuthMemberFollowed } from '../../libs/config';
 
 jest.mock('uuid', () => ({ v4: () => 'test-image-id' }));
 
@@ -292,7 +293,11 @@ describe('Member instructor workflow and compatibility', () => {
     const pipeline = model.aggregate.mock.calls[0][0] as [
       { $match: Record<string, unknown> },
       unknown,
-      { $facet: { list: [unknown, unknown, { $lookup: { from: string } }] } },
+      {
+        $facet: {
+          list: [unknown, unknown, { $lookup: { from: string } }, unknown];
+        };
+      },
     ];
     expect(pipeline[0].$match).toEqual({
       memberType: MemberType.INSTRUCTOR,
@@ -305,7 +310,26 @@ describe('Member instructor workflow and compatibility', () => {
       { $limit: 5 },
     ]);
     expect(pipeline[2].$facet.list[2].$lookup.from).toBe('likes');
+    expect(pipeline[2].$facet.list[3]).toEqual(
+      lookupAuthMemberFollowed({ followerId: memberId, followingId: '$_id' }),
+    );
     expect(result).toEqual({ list: [], metaCounter: [] });
+  });
+
+  it('includes follow lookup for anonymous instructor directory requests', async () => {
+    await service.getInstructors(null as never, {
+      page: 1,
+      limit: 5,
+      search: {},
+    });
+    const pipeline = model.aggregate.mock.calls[0][0] as [
+      unknown,
+      unknown,
+      { $facet: { list: unknown[] } },
+    ];
+    expect(pipeline[2].$facet.list[3]).toEqual(
+      lookupAuthMemberFollowed({ followerId: null, followingId: '$_id' }),
+    );
   });
 
   it('denies profile update when current database role/status does not match', async () => {

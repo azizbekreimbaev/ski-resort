@@ -1,5 +1,26 @@
 # Backend migration: Nestar → SkiResort
 
+## Events domain: 2026-10-06
+
+Implemented a separate `events` collection with scheduled dates, 1–5 images, optional Resort/location, DRAFT/PUBLISHED status, public published-only reads and ACTIVE ADMIN CRUD/uploads. Permanent removal retains files and references; generic upload targets reserve the Events namespace. Events are an approved extension beyond the unchanged DMM. See [client handoff](EVENT_IMPLEMENTATION.md) and [fresh validation](COMPLETED_TASKS.md). No live database migration, frontend or deployment is claimed.
+
+## Resort minimum stay: 2026-10-06
+
+User override: Resort minimum stay is now one day. Creation defaults to 1; create and admin-update values must be integers >= 1. Schema validation and the DMM rule match. Existing records are unchanged; Booking remains deferred. Earlier two-day statements describe historical behavior.
+
+## Resort minimum duration: 2026-10-06
+
+The user changed the Resort minimum to one day, superseding earlier two-day references. Create/update DTOs require positive whole days; GraphQL, service and schema creation defaults are 1. The DMM and current handoff reflect this rule. Existing records are not rewritten; Booking remains deferred.
+
+
+## Image upload stream repair: 2026-10-06
+
+imageUploader and imagesUploader now create missing target folders and share pipeline-based stream handling with partial-file cleanup. Single-upload errors retain the original exception instead of rejecting with false. Existing GraphQL fields, guards, relative URL format and multi-upload partial-success behavior are preserved; unsafe absolute/traversal targets are rejected before directory creation. See [executed checks and limits](COMPLETED_TASKS.md#image-upload-stream-repair-2026-10-06). Broader historical upload/security findings are not claimed fully resolved.
+
+## Instructor follow-state repair: 2026-10-05
+
+getInstructors now includes the existing meFollowed lookup for each listed instructor and the requesting member. Clients should select meFollowed { myFollowing } in their query to preserve the Follow/Unfollow state after refresh. Repeated subscribe requests return the existing relationship without incrementing follow counters again; the unique pair index remains unchanged. See [fresh validation and limits](COMPLETED_TASKS.md#instructor-directory-follow-state-and-repeated-subscribe-2026-10-05).
+
 ## Equipment catalog implementation: 2026-10-04
 
 The subsequent [update-flow review](COMPLETED_TASKS.md#update-flow-simplification-review-2026-10-04) removed a redundant Instructor profile read. The user's later clarification replaces owner comment updates/deletion with the exact original single-update flow: DELETE is only a status change, without target counters or compensation. Equipment cross-field validation and existing public contracts remain intact.

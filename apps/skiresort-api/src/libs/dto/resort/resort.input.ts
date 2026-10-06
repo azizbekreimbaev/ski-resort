@@ -66,9 +66,9 @@ export class ResortInput {
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsInt()
-  @Min(2)
-  @Field(() => Int, { nullable: true, defaultValue: 2 })
-  resortMinDays = 2;
+  @Min(1)
+  @Field(() => Int, { nullable: true, defaultValue: 1 })
+  resortMinDays = 1;
 
   @IsOptional()
   @IsEnum(ResortLevel)

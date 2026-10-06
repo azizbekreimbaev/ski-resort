@@ -28,8 +28,8 @@ const ResortSchema = new Schema(
     resortMinDays: {
       type: Number,
       required: true,
-      default: 2,
-      min: 2,
+      default: 1,
+      min: 1,
       validate: Number.isInteger,
     },
     resortLevel: { type: String, enum: ResortLevel, default: null },

@@ -158,7 +158,7 @@ describe('Resort generated GraphQL schema', () => {
   it('keeps managed fields out of inputs and defaults the minimum stay', () => {
     const input = schema.getType('ResortInput') as GraphQLInputObjectType;
     const fields = input.getFields();
-    expect(fields.resortMinDays.defaultValue).toBe(2);
+    expect(fields.resortMinDays.defaultValue).toBe(1);
     expect(fields.resortPricePerDay.type.toString()).toBe('Float!');
     expect(fields.resortLocation.type.toString()).toBe('ResortLocation!');
     expect(fields.resortFacilities.type.toString()).toBe('[ResortFacilities!]');
