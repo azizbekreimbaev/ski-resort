@@ -1,5 +1,9 @@
 # Next-session priorities
 
+## Socket frontend integration: 2026-10-07
+
+Integrate and smoke-test the exact previous-project chat contract in the actual frontend checkout using [socket handoff](SOCKET_CHAT_HANDOFF.md). Verify root-path upgrades through the deployment proxy and reconnect after auth changes. Payload minimization, logging, input controls and disconnect-race repair remain separate changes; no frontend or deployment work occurred here.
+
 ## FAQ backend: 2026-10-07
 
 FAQ backend is implemented locally. Integrate the public published-only FAQ reads and admin management in the actual frontend checkout using [FAQ handoff](FAQ_IMPLEMENTATION.md). Isolated MongoDB aggregation and full bootstrap verification remain separate; no frontend or deployment is claimed.

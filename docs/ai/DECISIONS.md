@@ -1,5 +1,9 @@
 # Migration decisions
 
+## Exact previous-project chat compatibility: 2026-10-07
+
+The user explicitly requested the same SocketModule/SocketGateway code from the previous project. Both files are copied byte-for-byte, including guest access, decoded JWT member payloads, original logging and five-message process-local history. No incidental hardening, protocol redesign, database chat collection or dependency change. [Frontend contract and limits](SOCKET_CHAT_HANDOFF.md) document preserved behavior.
+
 ## FAQ backend: 2026-10-07
 
 Separate `faqs` collection beyond the unchanged DMM. Plain text question/answer, DRAFT default and PUBLISHED visibility; duplicates allowed. Public published-only reads; all management uses ADMIN guards plus current ACTIVE ADMIN checks. Any active admin may manage entries; creator is immutable. Partial updates preserve omitted fields; permanent removal has no cascades. No images, categories, custom ordering, frontend or live migration. See [FAQ handoff](FAQ_IMPLEMENTATION.md).

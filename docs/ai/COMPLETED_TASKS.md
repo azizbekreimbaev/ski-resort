@@ -1,5 +1,13 @@
 # Completed tasks and validation
 
+## Exact previous-project socket chat restored: 2026-10-07
+
+Reviewed the user's previous Nestar socket implementation and copied socket.gateway.ts and socket.module.ts byte-for-byte into SkiResort; SHA-256 equality passed for both pairs. The gateway now identifies query-token JWT members with guest fallback, broadcasts member join/leave information and messages, and sends newcomers the latest five in-memory messages. SocketModule imports the existing exported AuthService through AuthModule; existing AppModule/WsAdapter wiring remains unchanged. Added [frontend socket handoff](SOCKET_CHAT_HANDOFF.md) and focused regression coverage. No dependency, auth-service, schema, database, frontend or deployment changes.
+
+Fresh checks: six focused Jest tests passed, including an isolated Nest SocketModule using the real WsAdapter on an ephemeral loopback port with fixture authentication. API and batch no-emit compilation and the API production build passed. Local Markdown targets were checked. Non-fixing lint of the exact copied production files reports 65 errors and two warnings; patch whitespace reports two trailing-space lines in copied gateway comments. These diagnostics are retained to satisfy the explicit exact-copy request. The new test's lint diagnostics were corrected separately. Initial test failures from ESM UUID loading and the test WebSocket constructor import were resolved without changing production code.
+
+Checks used local Node v20.19.0 and installed dependencies; sandbox Node path resolution required elevated local validation. No live JWT/account integration, MongoDB, full AppModule bootstrap, batch build/startup, frontend or production proxy was exercised. Authenticated member payload/logging, guest writes, input/rate-limit omissions and async disconnect races remain as in the original implementation; see the handoff's behavior limits.
+
 ## FAQ backend: 2026-10-07
 
 Implemented separate faqs schema, enum, DTOs and registered resolver/service/module. Public list/detail expose PUBLISHED only; admin create/update/remove/detail/list use ADMIN guards and current database ACTIVE ADMIN checks. Required trimmed question/answer, DRAFT default, immutable server-derived creator, partial updates and permanent removal follow Events. Added [FAQ client handoff](FAQ_IMPLEMENTATION.md) and updated migration decisions/next steps. DMM, frontend, dependencies and live data are unchanged.

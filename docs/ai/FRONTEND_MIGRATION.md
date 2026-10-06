@@ -1,5 +1,7 @@
 # Next.js frontend migration plan
 
+Socket chat now matches the previous project's backend implementation. Use the [socket frontend handoff](SOCKET_CHAT_HANDOFF.md): native WebSocket root-path connection, optional query token, outbound event/data envelope, incoming info/getMessages/message frames and server echo. Inspect the actual frontend checkout before integration; no frontend paths or deployment URL were inferred.
+
 Current Equipment backend phase: implement future clients against [Equipment handoff](EQUIPMENT_IMPLEMENTATION.md). Equipment has independent duration/price packages, category-normalized size, KIDS/ADULTS/ALL audience, optional purchase capability and AVAILABLE-only visibility. No daily Equipment price/minimum days or RENTED status. Existing frontend paths remain unverified; no client implementation is claimed.
 
 Target: SkiResort, confirmed by the user. Status: planned only. No Next.js frontend source exists in the inspected backend repository, and no frontend refactor has been completed in this session.

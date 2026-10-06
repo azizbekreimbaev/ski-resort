@@ -1,5 +1,9 @@
 # Backend migration: Nestar → SkiResort
 
+## Previous-project socket chat restored: 2026-10-07
+
+Copied the previous project's SocketModule and SocketGateway exactly, adding AuthModule injection, query-token identity with guest fallback, join/leave member events and five-message in-memory history. Existing native WsAdapter/root-path wiring is retained. See [frontend socket handoff](SOCKET_CHAT_HANDOFF.md) for exact frames and preserved limits. No frontend, persistence, live data or deployment change.
+
 ## FAQ backend: 2026-10-07
 
 Implemented FAQ GraphQL public reads and ACTIVE ADMIN CRUD using the existing Events pattern, with plain text question/answer and DRAFT/PUBLISHED status. Separate `faqs` collection; no DMM change, frontend or live migration. See [FAQ handoff](FAQ_IMPLEMENTATION.md) and [fresh checks](COMPLETED_TASKS.md).
