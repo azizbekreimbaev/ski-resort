@@ -1,151 +1,187 @@
-# SkiResort Backend Agent Instructions
+# SkiResort Backend — Nestar-Reference Refactoring Rules
 
-SkiResort is a NestJS GraphQL backend monorepo being adapted from a real-estate platform to a ski-resort platform. The target domain is defined in [SkiResort-Simple-ER.dmm](SkiResort-Simple-ER.dmm); the completed branding migration did not implement that domain.
+## Mission
 
-## Read First
+Refactor the **existing SkiResort NestJS backend** so that its implementation style, file organization, module structure, dependency-injection patterns, GraphQL resolvers, services, DTOs, input types, object types, schemas, and cross-module interactions are consistent with the **existing Nestar backend**.
 
-Read all six project-context documents before beginning work:
+I already understand the Nestar codebase and want to understand, explain, maintain, and defend **every line of the finished SkiResort backend** in the same way. Prefer the actual patterns demonstrated by Nestar over introducing your own preferred architecture.
 
-- [Backend migration](docs/ai/BACKEND_MIGRATION.md)
-- [Decisions](docs/ai/DECISIONS.md)
-- [Frontend migration](docs/ai/FRONTEND_MIGRATION.md)
-- [Completed tasks](docs/ai/COMPLETED_TASKS.md)
-- [Next steps](docs/ai/NEXT_STEPS.md)
-- [Prompts](docs/ai/PROMPTS.md)
+**Critical distinction:**
+- **Nestar = reference for HOW code is organized and written.**
+- **SkiResort = authority for WHAT the application must do.**
+- The goal is the **Nestar coding style applied to SkiResort business requirements**, not a migration of Nestar business data or features.
 
-Read the DMM before domain work: it is the source of truth for target collections, fields, required/nullable flags, relationships, enum values and recorded business rules. The six handoff documents record migration history, accepted decisions, remaining work and validation status. Earlier branding-only restrictions describe that earlier task; they do not override a current request to implement the DMM domain.
+## When these instructions apply
 
-Inspect Git status and applicable nested instructions before editing. Preserve existing user changes. Current user instructions take precedence over historical plans; verify documentation against current source. Backlogs and reusable prompts do not independently authorize implementation.
+Use this workflow when the user requests the Nestar-reference backend audit or refactor. A request to write, review, or explain these instructions is a documentation task; it does not itself start the application refactor.
 
-## Project Shape
+For an audit-only request, complete the requested review and migration documents without editing application source. For an authorized refactor, complete the audits and migration map first, then proceed through safe, documented batches. Unrelated tasks do not trigger a whole-backend rewrite.
 
-This repository is a TypeScript/NestJS backend monorepo with one dependency graph:
+## Repository locations and access
 
-| Application | Source | Nest project key | Production output |
-|---|---|---|---|
-| API (default) | `apps/skiresort-api/src` | `skiresort` | `dist/apps/skiresort-api/main.js` |
-| Scheduled batch | `apps/skiresort-batch/src` | `skiresort-batch` | `dist/apps/skiresort-batch/main.js` |
+Reference (READ ONLY):
+- `C:\Users\Aziz\Desktop\nestar`
+- Primary reference source: `C:\Users\Aziz\Desktop\nestar\apps\nestar-api\src`
 
-The API uses Express, code-first GraphQL/Apollo, Mongoose/MongoDB, JWT guards, local filesystem uploads and native WebSockets. Batch jobs use Nest Schedule and import API schemas, DTOs and enums directly. Changes to shared definitions may affect both applications. Do not introduce architecture changes as incidental cleanup.
+Target (the ONLY application you may modify):
+- `C:\Users\Aziz\Desktop\skiresort`
+- Discover the real backend application folder and `src` path instead of assuming its name.
 
-- Keep the existing NestJS resolver/service/module pattern based on MVC and dependency injection. Resolvers handle GraphQL transport and guards; services implement business logic and persistence; modules wire models, providers, imports and exports.
-- Keep DTOs and enums under `apps/skiresort-api/src/libs/dto` and `apps/skiresort-api/src/libs/enums`; keep Mongoose schemas under `apps/skiresort-api/src/schemas` (schemas are not currently under `libs`). Feature modules remain under `apps/skiresort-api/src/components`.
-- Keep shared auth, member, like, view, comment, follow, board-article and socket modules reusable as the catalog changes.
+Work from the SkiResort repository root. Before proceeding:
+1. Verify that both project directories exist and are readable from the current Codex session.
+2. Locate the target backend using the workspace configuration and actual file tree.
+3. Read applicable nested `AGENTS.md` instructions, if any.
+4. Inspect root `package.json`, workspace configuration, TypeScript configuration, path aliases, backend package scripts, and module import paths in both projects.
+5. Review Nestar as a **read-only external reference**. Never edit, format, rename, delete, install into, or run migrations against Nestar.
+6. If reference files are inaccessible, clearly report the blocked path. **Do not pretend to have inspected Nestar, and do not begin a speculative refactor.**
+7. Inspect `git status` and the existing diff before editing SkiResort. Preserve pre-existing user changes and untracked files; do not reset, restore, overwrite, or discard them. Treat the current working tree as the behavioral baseline and distinguish existing changes from this task's edits.
 
-Current source registers Auth, Member, InstructorApplication, Resort, Equipment, BoardArticle, Comment, Follow, Like and View modules. Notice and Notification have schema definitions without active feature registration. Equipment catalog is implemented with embedded rental packages, normalized sizes, audience and purchase capability. Booking and Lesson remain deferred. Verify current source before relying on this snapshot.
+Never copy `.git`, Git configuration, repository history, secrets, `.env` values, production credentials, deployment settings, or old remote links from Nestar into SkiResort. No runtime imports may point into the local Nestar directory.
 
-Detailed references are in [architecture](context/architecture.md), [API inventory](context/api-inventory.md), [data model](context/data-model.md), [code standards](context/code-standards.md) and [review findings](context/review-findings.md).
+## Non-negotiable implementation rules
 
-## Domain Rules
+1. **Review before editing.** Do not start rewriting merely because a SkiResort file looks different. First identify the corresponding Nestar implementation and the existing SkiResort behavior.
+2. **Do not add unrelated logic.** No new endpoints, GraphQL operations, fields, entities, features, workflows, queues, caches, payment logic, storage redesigns, extra abstractions, utilities, or packages unless explicitly requested.
+3. **Do not redesign.** Do not replace Nestar's style with Clean Architecture, DDD, CQRS, generic base repositories, universal CRUD services, abstract factories, or new framework conventions.
+4. **Preserve SkiResort contracts.** Keep existing domain names, data shape, schema fields, enum values, role rules, permission checks, state transitions, GraphQL query/mutation names and response semantics, filters, sorting, pagination, and errors unless a documented incompatibility requires attention.
+5. **Preserve working behavior.** The refactor should be behavior-preserving by default. If an existing defect, security risk, or important mismatch appears, report it; do not silently expand the scope.
+6. **Preserve security.** Never remove authentication, authorization, input validation, ownership checks, or sensitive-data restrictions merely to resemble Nestar. Do not reproduce an unsafe pattern from the reference.
+7. **Prefer existing Nestar patterns.** Use equivalent naming, grouping, decorator usage, constructor injection, private/public access modifiers, async/await structure, service composition, error handling, and query conventions where suitable for SkiResort.
+8. **No broad find-and-replace migration.** Adapt each component deliberately. Never rename a SkiResort domain concept to a Nestar concept merely for superficial similarity.
+9. **Keep changes reviewable.** Refactor one coherent component or dependency group at a time, review the diff, and run relevant checks before continuing. Do not delete working code without proving it is replaced safely.
+10. **No unauthorized project changes.** Do not change the frontend, Git history, remotes, infrastructure, deployment, or unrelated files as part of this backend-style refactor.
+11. **Do not rewrite code that already matches.** Mark matching components as reviewed with no change needed. A complete refactor means every relevant component was assessed, not that every file was changed.
 
-- Use `SkiResort` / `SKIRESORT` / `skiresort` for project identity and Resort, Equipment, Booking and Instructor terminology for the target domain.
-- Do not introduce pet-shop/product enums or real-estate fields into new ski-domain contracts. Property and AGENT APIs are retired; historical documentation retains their provenance. Do not reintroduce aliases or reinterpret legacy data.
-- Users, admins and instructors share `members`; do not create a separate instructor collection. Implemented `memberType` values are `USER`, `ADMIN`, `INSTRUCTOR`. Persisted AGENT records, if any, need separately approved cleanup and must never automatically become INSTRUCTOR.
-- Instructor-only fields are nullable: `instructorResortId`, `instructorExperienceYears`, `instructorLanguages`, `instructorLevel`, `instructorAudience`, and `instructorPrice1Week` through `instructorPrice4Weeks`. Audience is a scalar enum: `KIDS`, `ADULTS`, `FAMILY`, `PRIVATE`; it is an approved extension beyond the unchanged DMM.
-- Public signup retains optional MemberInput.memberType, accepting USER/omission and rejecting privileged/null roles. Self updates cannot change role. Only ADMIN application approval promotes ACTIVE USER to INSTRUCTOR; generic admin updates cannot bypass it. Instructor reassignment and Lessons are deferred.
-- Applications use separate `instructorApplications` PENDING/APPROVED/REJECTED snapshots. Submission/review require transactions and a pending-only unique memberId index; deployment must verify both. New operations reuse guards and additionally check current database role/status. See [Member/Instructor handoff](docs/ai/BACKEND_MIGRATION.md).
-- `getInstructors` / `InstructorsInquiry` replace the provider directory. Batch ranks ACTIVE INSTRUCTOR using article/like/view weights 3/2/1, existing schedules and no property contribution. Local implementation does not imply live data/index changes.
-- Resort bookings retain a minimum of one day (`resortMinDays`). Equipment rental packages use independent positive whole-hour durations and KRW prices in `equipmentRentalRates`; the minimum is derived from the shortest configured duration. No daily Equipment price or separate minimum field.
-- Equipment uses one normalized size variant per document, `equipmentAudience` KIDS/ADULTS/ALL, and optional purchase capability. Quantity is ADMIN-managed catalog inventory; AVAILABLE is public visibility, not booking availability. No owner field, unique catalog identity, reservation/purchase deduction or automatic status switching. Purchase price is null unless purchasable; prices and rates are validated together. Permanent removal retains related records.
-- One `bookings` collection stores resort bookings, equipment rentals and instructor bookings. It includes the booking member, type, nullable target IDs, start/end dates, quantity, total price and status. `instructorId` references a member, not a separate instructor model.
-- Preserve DMM field spelling, collection casing and required/nullable flags, including nullable `equipments.resortId` and `views.memberId`. Generic comments, likes and views use their group enum plus reference ID; follows remain member-to-member, including instructors.
-- The DMM does not specify resort-owner roles, instructor booking duration, date inclusivity, price formulas, availability/concurrency policy, cancellation policy or notification resource discrimination. Do not present inferred policies as diagram rules; resolve them when relevant implementation needs them.
+## Phase 1 — Thorough Nestar architecture audit (BEFORE changing SkiResort)
 
-### Target Collections
+Read **every relevant source file**, not merely filenames or selected snippets, in the Nestar backend, especially:
 
-| Collection | Purpose / references |
-|---|---|
-| `members` | Users, admins and instructors; nullable instructor resort association |
-| `resorts` | Bookable ski resorts; `memberId` references `members` |
-| `equipments` | Rental equipment; nullable `resortId` references `resorts` |
-| `bookings` | `memberId` references `members`; nullable `resortId`, `equipmentId`, `instructorId` reference their targets |
-| `boardArticles` | Community posts; `memberId` references `members` |
-| `comments` | Article/resort/equipment comments; `memberId` and polymorphic `commentRefId` |
-| `likes` | Member/article/resort/equipment likes; `memberId` and polymorphic `likeRefId` |
-| `views` | Member/article/resort/equipment views; nullable `memberId` and polymorphic `viewRefId` |
-| `follows` | `followingId` and `followerId` reference `members` |
-| `notifications` | Required `receiverId`, nullable `authorId` reference `members`; nullable `resourceId` |
-| `notices` | Admin notices; `memberId` references `members` |
+The audit covers authored backend source, imported shared source, applicable tests, and configuration needed to understand the backend. Exclude dependencies, build output, and generated artifacts from exhaustive source reading; inspect generated GraphQL schemas when needed to establish or verify the public contract. Maintain a per-file review inventory and record unread files explicitly.
 
-### Target Enum Values
+### Bootstrap and root application
+- `src/main.ts`: bootstrap sequence, NestFactory, global configuration, middleware, pipes, filters, guards, interceptors, CORS, GraphQL setup, and listen behavior.
+- Root `app.module.ts`: `imports`, `providers`, `controllers`, `exports`, configuration, database integration, and component registration.
+- Root `app.controller.ts`, `app.service.ts`, and `app.resolver.ts` where present: especially health/status endpoints, their purpose, and how they are wired.
+- Any root configuration, constants, enums, and shared application providers.
 
-These are the exact DMM field values, not a claim that current TypeScript enums already match.
+### Shared infrastructure and persistence
+- Every file under the backend's `database`, `libs`, and `schemas` folders, wherever those folders actually exist.
+- Follow imports into other repository-level shared `libs` or packages where required to understand how the backend works.
+- MongoDB/Mongoose model registration, schema definitions, providers, connections, database utilities, collections, indexes, common filters, and query construction.
+- Shared helpers, exceptions, enum registration, authentication/authorization pieces, and reusable decorators.
 
-| Field(s) | Values |
-|---|---|
-| `memberType` | `USER`, `ADMIN`, `INSTRUCTOR` |
-| `memberStatus` | `ACTIVE`, `BLOCK`, `DELETE` |
-| `memberAuthType` | `EMAIL`, `PHONE` |
-| `instructorLevel` | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `ALL` |
-| `resortStatus` | `ACTIVE`, `SOLD_OUT`, `DELETE` |
-| `resortLevel` | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `MIXED` |
-| `equipmentAudience` | `KIDS`, `ADULTS`, `ALL` |
-| `equipmentStatus` | `AVAILABLE`, `MAINTENANCE`, `DELETE` |
-| `equipmentCategory` | `SKI`, `SNOWBOARD`, `BOOTS`, `HELMET`, `POLES`, `CLOTHING`, `OTHER` |
-| `bookingType` | `RESORT`, `EQUIPMENT`, `INSTRUCTOR` |
-| `bookingStatus` | `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED` |
-| `articleCategory` | `FREE`, `REVIEW`, `NEWS`, `QNA` |
-| `articleStatus`, `commentStatus`, `noticeStatus` | `ACTIVE`, `DELETE` |
-| `commentGroup` | `ARTICLE`, `RESORT`, `EQUIPMENT` |
-| `likeGroup`, `viewGroup` | `MEMBER`, `ARTICLE`, `RESORT`, `EQUIPMENT` |
-| `notificationType` | `BOOKING`, `COMMENT`, `LIKE`, `FOLLOW`, `SYSTEM` |
-| `notificationStatus` | `UNREAD`, `READ` |
-| `noticeCategory` | `GENERAL`, `RESORT`, `EVENT`, `SYSTEM` |
+### Every component / API module
+- Traverse **every** folder and `.ts` file under `src/components` and any equivalent feature directories.
+- For **each** feature, read its module, resolver/controller (whichever exists), service, DTOs, inputs, outputs/object types, enums, schemas, interfaces, and related helpers.
+- Trace each public GraphQL query/mutation or REST route end-to-end, including which service methods it calls and which database operations are performed.
+- Trace components that reuse one another (especially comment-like shared features): importing/exporting a module, injecting a service, associating records, resolving relationships, and avoiding dependency cycles.
 
-## Compatibility and Migration Boundaries
+### Exact conventions to extract from real code
+Examine and record the **actual Nestar implementations** of:
+- Nest decorators: `@Module`, `@Injectable`, `@Controller`, `@Get`, `@Post`, `@UseGuards`, and any application-specific decorators in use.
+- GraphQL decorators: `@Resolver`, `@Query`, `@Mutation`, `@ResolveField`/`@ResolveProperty`, `@Args`, `@Context`, `@InputType`, `@ObjectType`, `@ArgsType`, `@Field`, `@ID`, and `registerEnumType`, where used.
+- Mongoose decorators/APIs: `@Schema`, `@Prop`, `SchemaFactory`, `@InjectModel`, `Model`, query methods, aggregation, population, and pagination, where used.
+- DTO construction: input versus output classes, required/optional fields, defaults, nested types, arrays, ID handling, enums, validation/transform decorators, and mapped types if used.
+- Module wiring: `imports`, `providers`, `controllers`, `exports`, model registration, dependency injection, and `forwardRef` only where actually necessary.
+- Service coding style: constructor injection, parameter types, method ordering/naming, async/await, CRUD flows, query construction, exceptions, mapping, updates, and deletes.
+- Resolver coding style: exact GraphQL decorators, arguments, authentication context, delegation to services, and return types.
+- Conventions for file naming, folders, imports, aliases, status enums, timestamps, database IDs, auth/roles, error messages, and comments.
 
-- Preserve GraphQL field names, arguments, DTOs, enum values and client contracts outside the requested migration scope. The default endpoint is `/graphql`; existing `chechAuth` and `chechAuthRoles` spellings remain public contracts.
-- Implementing target schemas does not authorize moving, deleting or renaming live databases or stored records. Plan data and client compatibility explicitly when replacing legacy collections or enum values; preserve unrelated references and indexes.
-- Keep dependency versions stable for branding/documentation tasks. Do not mix upgrades, large formatting changes or unrelated defect repairs into them.
-- Historical old-name references in migration documents and provenance are intentional. Branding audits must distinguish active identity from historical documentation, Git internals and third-party packages.
+**Do not guess which Nestar conventions exist. Verify them against actual source files.** If a listed framework feature is not used by Nestar, do not introduce it just because it is listed above.
 
-## Database and runtime boundaries
+If Nestar contains differing implementations of the same pattern, select the closest analogue for the SkiResort component and cite the exact reference and reason. Do not invent a universal Nestar convention from inconsistent examples.
 
-The user originally chose to preserve database example names as well as live connections/data. Later inspection found `.env.example` already using SkiResort example names. This discrepancy is documented in `docs/ai`; do not automatically revert the file or rename databases to reconcile it. Follow the current task's instructions and clarify only when resolving that policy is necessary.
+## Phase 2 — Audit the complete current SkiResort backend
 
-Do not expose `.env` secrets, tokens, credentials or private exported data in commands, logs, documentation or final responses. Treat ignored `uploads/` content as data; preserve its contents and avoid incidental rewrites. `dist/` is generated output, not application source.
+Read the corresponding SkiResort files and folders to the same depth. Inventory:
+- Bootstrap/root application and any health-check controller/service.
+- Main `AppModule` imports/providers/controllers/exports.
+- Database connection/configuration and shared libs.
+- All GraphQL types, DTOs, inputs, object types, enums, and Mongoose schemas.
+- All component modules, resolvers/controllers, services, and their injected dependencies.
+- All currently implemented CRUD behavior and non-CRUD business rules.
+- All shared or cross-feature paths: comments, users/members, authentication, favorites, follows, resorts, equipment, instructors/applications, bookings, events, community, and any **other modules actually present**. Do not fabricate missing modules.
 
-Full application startup and e2e suites may connect to MongoDB; batch startup can execute scheduled jobs. Use isolated fixtures or a known test environment for tests that write data. Isolated controller/service tests do not establish full bootstrap or database integration correctness.
+Compare corresponding implementations **line by line where patterns differ**, rather than inferring from folder names. Record the existing SkiResort contracts before touching them.
 
-## Workflow
+Before source edits, run the relevant existing checks when they can run safely without production services. Record baseline failures separately so they are not misreported as refactor regressions. Capture existing API operation names, argument and return types, GraphQL nullability/defaults, validation, persisted schema options/indexes, and important success/error behavior for comparison after each batch.
 
-1. Analyze relevant source, DMM definitions and context before editing. Historical review findings describe existing issues, not defects caused by the branding migration; reverify them before repair.
-2. Keep changes small, within the requested scope and consistent with existing project patterns. Documentation-only tasks must not change application source or configuration.
-3. Do not remove working logic unless it is replaced safely. Trace resolver/service/module wiring, DTOs, schema references, aggregation lookups, authorization and batch dependencies for each domain change.
-4. Use current application/project paths in imports, scripts and output references. Do not restore old project aliases as an incidental compatibility workaround.
-5. Update `docs/ai/COMPLETED_TASKS.md` after major completed work, and update affected decisions/migration/next-step documents when within scope. Record implemented work separately from target design.
-6. Add or update focused regression tests when behavior changes. Avoid tests that merely duplicate trivial naming substitutions.
+## Phase 3 — Write an evidence-based migration map
 
-No Next.js frontend source is present in this backend checkout. Frontend mappings in `docs/ai` are candidates; inspect the actual frontend repository and its instructions before implementing them. Do not invent routes, component paths or deployment URLs.
+Before editing application source, create/update:
+- `docs/backend-refactor/NESTAR_ARCHITECTURE_REVIEW.md`
+- `docs/backend-refactor/SKIRESORT_PARITY_PLAN.md`
 
-## Validation
+Keep these documents specific and concise, with **actual file paths and code references**, not generic NestJS tutorials. Include:
+1. A file/folder inventory confirming what was inspected in both projects, with per-file review status, code references, and explicit pending or blocked entries.
+2. A bootstrap/dependency graph showing `main.ts` -> `AppModule` -> feature module -> resolver/controller -> service -> model/database; show shared-service calls between features.
+3. A component-by-component comparison table: `SkiResort file | Nestar reference file/pattern | Difference | Intended adjustment | Behavior that must stay unchanged`.
+4. An inventory of GraphQL queries/mutations or REST routes, input/output types, schema fields, module imports/exports, guards, and relevant cross-module consumers.
+5. Any features with **no appropriate Nestar analogue**; preserve their business logic and apply the nearest verified structural convention without inventing new domain behavior.
+6. Identified risks: contract changes, circular dependencies, schema compatibility, auth, validation, broken imports, and behavior changes.
+7. A dependency-ordered, small-batch implementation plan.
 
-Use an available Node/npm runtime and installed dependencies. Do not assume the temporary runtime used in the historical migration remains available.
+Do not claim review completeness if any relevant file was not opened/read. Record blockers and gaps explicitly.
 
-```sh
-# Compile both application configurations without writing incremental metadata
-node node_modules/typescript/bin/tsc --project apps/skiresort-api/tsconfig.app.json --noEmit --incremental false
-node node_modules/typescript/bin/tsc --project apps/skiresort-batch/tsconfig.app.json --noEmit --incremental false
+## Phase 4 — Refactor SkiResort using Nestar conventions
 
-# Build the default API and explicit batch application
-npm run build
-npm run build -- skiresort-batch
+Follow the recorded migration map and apply changes in dependency order. Once the user has authorized the refactor, proceed with safe batches within that scope without requesting approval for every component. Report differences that require a contract, behavior, or security decision before making that particular change.
 
-# Inspect lint without rewriting source
-node node_modules/eslint/bin/eslint.js "apps/**/*.ts"
+1. Shared types, enums, database/schema registration, and common infrastructure **only where a mismatch requires changes**.
+2. Root application wiring and bootstrapping **only where needed**.
+3. Individual feature DTOs, inputs, object types, and schemas.
+4. Feature modules, resolvers/controllers, and services, one coherent component group at a time.
+5. Cross-module injections, imports/exports, shared actions (such as comments attached to other domain entities), and end-to-end call chains.
 
-# Check patch whitespace
-git diff --check
-```
+For every refactored component:
+- Mirror the corresponding **verified Nestar code organization and method style**, adapted to SkiResort fields and requirements.
+- Keep resolver/controller methods thin if Nestar does; implement business logic in services according to Nestar's actual pattern.
+- Keep GraphQL DTOs, schema entities, and service signatures consistent with each other.
+- Preserve the database model, existing records, collection names, and public API unless change is explicitly justified and requested.
+- Reuse shared feature services and their module exports in the same manner as Nestar rather than duplicating logic.
+- Do not copy irrelevant Nestar classes, fields, route names, authorization rules, or entity associations.
+- Match naming and coding patterns without forcing identical statements when behavior genuinely differs.
+- Avoid speculative fixes, extra comments on every line, or unnecessary new helper methods.
+- After each coherent edit: inspect `git diff`, validate imports/dependencies, type-check, and run the smallest relevant available tests.
 
-Choose checks appropriate to the change. Application compiler configurations exclude tests, so passing these checks does not verify test compilation. `npm run lint` includes `--fix`; do not use it as a read-only check. `npm run format` also rewrites files. For documentation-only edits, check Markdown links and the diff; builds are unnecessary.
+If copying Nestar style would change behavior, security, or persisted data, **stop that particular change**, document the difference, and preserve SkiResort's current behavior until the conflict is resolved. Continue safe independent changes when possible.
 
-The migration record reports 3,214 lint errors and 24 warnings as a historical baseline. Do not treat those totals as a guaranteed current result or repair all of them incidentally. Report newly observed failures separately from existing ones. Verify test discovery before claiming coverage; the historical default Jest run discovered no tests.
+## Phase 5 — Verification and teaching-oriented explanation
 
-## Documentation and handoff
+Run the repository's **existing** scripts where available (discover actual commands first):
+- TypeScript build/type-check.
+- Lint/format check, scoped to the backend and changed files where supported. Inspect scripts first; use check mode rather than automatic fixes or repository-wide formatting that would alter unrelated or pre-existing edits.
+- Existing unit/integration tests relevant to changed modules.
+- GraphQL schema generation/validation and application bootstrap or health endpoint checks, if these can be done without contacting production services.
 
-Keep completed work, proposed next tasks and observed workspace changes distinct. When a task changes migration state, update relevant `docs/ai` documents if within scope. Link from the document's actual location: repository-root context links from `docs/ai` require `../../context/...`.
+Never run destructive database operations or production migrations as part of this task. If a test requires a database or credentials not available, report it as **not run**, not passed.
 
-Preserve dates and provenance of historical diagnostics; editing embedded paths or branding does not rerun a check. Refresh affected source-manifest hashes/line counts when maintaining that artifact, without presenting its original commit as the current tree.
+Create/update `docs/backend-refactor/CODE_WALKTHROUGH.md` to help me study the finished backend. For each completed component, explain in clear, practical language:
+- Each file's exact purpose and its analogous Nestar file.
+- What its major decorators, imports, constructor dependencies, DTO fields, and return types do.
+- How a real request flows through resolver/controller -> service -> schema/model -> response.
+- How CREATE, READ, UPDATE, and DELETE are implemented (where present), including important conditions and errors.
+- How another module reuses this component and why imports/exports/providers are configured that way.
+- What was changed, what was intentionally preserved, and any remaining differences from Nestar.
+- Point to exact file paths, class names, and method names, so I can trace and understand the implementation statement by statement.
 
-Final reports should state what changed, which checks actually ran, their results and material limits. Do not infer frontend completion, live data migration, deployment, commits or publication from local file edits. Distinguish historical validation from checks executed for the current task.
+This explanation is documentation **about the existing code**, not a request to add large teaching comments inside source files.
+
+## Completion criteria and reporting
+
+A feature in the authorized refactor is complete, whether changed or already matching, only when:
+- The corresponding Nestar pattern has been inspected and documented (or the absence of an analogue is recorded).
+- Its SkiResort-specific behavior and public contracts are preserved.
+- Module/resolver/service/DTO/schema wiring is consistent and type-checks.
+- Existing relevant tests pass, or limitations are honestly reported.
+- Its cross-module consumers still work.
+- Its code walkthrough is written and understandable.
+
+After every working batch, report:
+1. Modules/files inspected and changed.
+2. Specific Nestar patterns applied, with file-path evidence.
+3. SkiResort logic/contracts deliberately preserved.
+4. Verification commands and outcomes.
+5. Risks, blockers, and next uncompleted components.
+
+**Begin with the complete source audit and migration map, not immediate rewriting.** Then implement systematically in small batches. Do not claim the whole backend is finished until every relevant module has been inspected, refactored where needed, and verified.

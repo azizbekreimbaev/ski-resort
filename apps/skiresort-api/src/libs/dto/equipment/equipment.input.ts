@@ -37,7 +37,11 @@ export const availableEquipmentSorts = [
 ];
 @InputType()
 export class EquipmentRentalRateInput {
-  @IsInt() @Min(1) @Max(2147483647) @Field(() => Int) durationHours!: number;
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  @Field(() => Int)
+  durationHours!: number;
   @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   @Field(() => Float)
@@ -198,8 +202,15 @@ export class AllEquipmentSearch extends EquipmentSearch {
 }
 @InputType()
 export class EquipmentHistoryInquiry {
-  @IsInt() @Min(1) @Field(() => Int) page!: number;
-  @IsInt() @Min(1) @Max(100) @Field(() => Int) limit!: number;
+  @IsInt()
+  @Min(1)
+  @Field(() => Int)
+  page!: number;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Field(() => Int)
+  limit!: number;
 }
 
 @InputType()

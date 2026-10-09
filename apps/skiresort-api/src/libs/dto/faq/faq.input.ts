@@ -1,10 +1,9 @@
-import { Field, InputType, Int, PartialType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsIn,
   IsInt,
-  IsMongoId,
   IsNotEmpty,
   IsObject,
   IsOptional,
@@ -39,18 +38,6 @@ export class FaqInput {
 }
 
 @InputType()
-export class FaqUpdate extends PartialType(FaqInput, {
-  skipNullProperties: false,
-}) {
-  @IsMongoId() @Field(() => String) _id!: string;
-  // Override the creation default: omission must not unpublish an Faq.
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsEnum(FaqStatus)
-  @Field(() => FaqStatus, { nullable: true })
-  faqStatus?: FaqStatus;
-}
-
-@InputType()
 export class FaqSearch {
   @IsOptional()
   @IsString()
@@ -68,8 +55,15 @@ export class AllFaqSearch extends FaqSearch {
 
 @InputType({ isAbstract: true })
 class FaqPagination {
-  @IsInt() @Min(1) @Field(() => Int) page!: number;
-  @IsInt() @Min(1) @Max(100) @Field(() => Int) limit!: number;
+  @IsInt()
+  @Min(1)
+  @Field(() => Int)
+  page!: number;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Field(() => Int)
+  limit!: number;
   @IsOptional()
   @IsIn(['createdAt', 'updatedAt'])
   @Field(() => String, { nullable: true })

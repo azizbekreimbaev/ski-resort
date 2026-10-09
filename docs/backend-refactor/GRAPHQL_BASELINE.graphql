@@ -1,0 +1,887 @@
+input ABAISearch {
+  articleCategory: BoardArticleCategory
+  articleStatus: BoardArticleStatus
+}
+
+input AllBoardArticlesInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: ABAISearch!
+  sort: String
+}
+
+input AllEquipmentSearch {
+  audienceList: [EquipmentAudience!]
+  categoryList: [EquipmentCategory!]
+  equipmentBrand: String
+  equipmentPurchasable: Boolean
+  equipmentStatus: EquipmentStatus
+  purchasePricesRange: EquipmentPricesRange
+  rentalDurationHours: Int
+  rentalPricesRange: EquipmentPricesRange
+  resortId: String
+  sizeList: [String!]
+  text: String
+}
+
+input AllEquipmentsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: AllEquipmentSearch = {}
+  sort: String
+}
+
+input AllEventSearch {
+  eventStatus: EventStatus
+  resortId: String
+  text: String
+}
+
+input AllEventsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: AllEventSearch
+  sort: String
+}
+
+input AllFaqSearch {
+  faqStatus: FaqStatus
+  text: String
+}
+
+input AllFaqsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: AllFaqSearch
+  sort: String
+}
+
+input AllResortSearch {
+  facilities: [ResortFacilities!]
+  levelList: [ResortLevel!]
+  locationList: [ResortLocation!]
+  memberId: String
+  pricesRange: ResortPricesRange
+  resortStatus: ResortStatus
+  text: String
+}
+
+input AllResortsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: AllResortSearch = {}
+  sort: String
+}
+
+input BAISearch {
+  articleCategory: BoardArticleCategory
+  memberId: String
+  text: String
+}
+
+type BoardArticle {
+  _id: String!
+  articleCategory: BoardArticleCategory!
+  articleComments: Int!
+  articleContent: String!
+  articleImage: String
+  articleLikes: Int!
+  articleStatus: BoardArticleStatus!
+  articleTitle: String!
+  articleViews: Int!
+  createdAt: DateTime!
+  meLiked: [MeLiked!]
+  memberData: Member
+  memberId: String!
+  updatedAt: DateTime!
+}
+
+enum BoardArticleCategory {
+  GENERAL
+  NEWS
+  QUESTIONS
+  REVIEWS
+  TIPS_GUIDES
+}
+
+input BoardArticleInput {
+  articleCategory: BoardArticleCategory!
+  articleContent: String!
+  articleImage: String
+  articleTitle: String!
+}
+
+enum BoardArticleStatus {
+  ACTIVE
+  DELETE
+}
+
+input BoardArticleUpdate {
+  _id: String!
+  articleContent: String
+  articleImage: String
+  articleStatus: BoardArticleStatus
+  articleTitle: String
+}
+
+type BoardArticles {
+  list: [BoardArticle!]!
+  metaCounter: [TotalCounter!]
+}
+
+input BoardArticlesInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: BAISearch!
+  sort: String
+}
+
+input CISearch {
+  commentGroup: CommentGroup
+  commentRefId: String!
+}
+
+type Comment {
+  _id: String!
+  commentContent: String!
+  commentGroup: CommentGroup!
+  commentRefId: String!
+  commentStatus: CommentStatus!
+  createdAt: DateTime!
+  memberData: Member
+  memberId: String!
+  updatedAt: DateTime!
+}
+
+enum CommentGroup {
+  ARTICLE
+  EQUIPMENT
+  MEMBER
+  RESORT
+}
+
+input CommentInput {
+  commentContent: String!
+  commentGroup: CommentGroup!
+  commentRefId: String!
+}
+
+enum CommentStatus {
+  ACTIVE
+  DELETE
+}
+
+input CommentUpdate {
+  _id: String!
+  commentContent: String
+  commentStatus: CommentStatus
+}
+
+type Comments {
+  list: [Comment!]!
+  metaCounter: [TotalCounter!]
+}
+
+input CommentsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: CISearch!
+  sort: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum Direction {
+  ASC
+  DESC
+}
+
+type Equipment {
+  _id: String!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  equipmentAudience: EquipmentAudience!
+  equipmentBrand: String
+  equipmentCategory: EquipmentCategory!
+  equipmentComments: Int!
+  equipmentDesc: String
+  equipmentImages: [String!]
+  equipmentLikes: Int!
+  equipmentName: String!
+  equipmentPurchasable: Boolean!
+  equipmentPurchasePrice: Float
+  equipmentQuantity: Int!
+  equipmentRentalRates: [EquipmentRentalRate!]!
+  equipmentSize: String
+  equipmentStatus: EquipmentStatus!
+  equipmentViews: Int!
+  meLiked: [MeLiked!]!
+  resortId: String
+  updatedAt: DateTime!
+}
+
+enum EquipmentAudience {
+  ADULTS
+  ALL
+  KIDS
+}
+
+enum EquipmentCategory {
+  BOOTS
+  CLOTHING
+  HELMET
+  OTHER
+  POLES
+  SKI
+  SNOWBOARD
+}
+
+input EquipmentHistoryInquiry {
+  limit: Int!
+  page: Int!
+}
+
+input EquipmentInput {
+  equipmentAudience: EquipmentAudience = ALL
+  equipmentBrand: String
+  equipmentCategory: EquipmentCategory!
+  equipmentDesc: String
+  equipmentImages: [String!]
+  equipmentName: String!
+  equipmentPurchasable: Boolean = false
+  equipmentPurchasePrice: Float
+  equipmentQuantity: Int!
+  equipmentRentalRates: [EquipmentRentalRateInput!]!
+  equipmentSize: String
+  equipmentStatus: EquipmentStatus = AVAILABLE
+  resortId: String
+}
+
+input EquipmentPricesRange {
+  end: Float!
+  start: Float!
+}
+
+type EquipmentRentalRate {
+  durationHours: Int!
+  price: Float!
+}
+
+input EquipmentRentalRateInput {
+  durationHours: Int!
+  price: Float!
+}
+
+input EquipmentSearch {
+  audienceList: [EquipmentAudience!]
+  categoryList: [EquipmentCategory!]
+  equipmentBrand: String
+  equipmentPurchasable: Boolean
+  purchasePricesRange: EquipmentPricesRange
+  rentalDurationHours: Int
+  rentalPricesRange: EquipmentPricesRange
+  resortId: String
+  sizeList: [String!]
+  text: String
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  DELETE
+  MAINTENANCE
+}
+
+input EquipmentUpdate {
+  _id: String!
+  equipmentAudience: EquipmentAudience
+  equipmentBrand: String
+  equipmentCategory: EquipmentCategory
+  equipmentDesc: String
+  equipmentImages: [String!]
+  equipmentName: String
+  equipmentPurchasable: Boolean
+  equipmentPurchasePrice: Float
+  equipmentQuantity: Int
+  equipmentRentalRates: [EquipmentRentalRateInput!]
+  equipmentSize: String
+  equipmentStatus: EquipmentStatus
+  resortId: String
+}
+
+type Equipments {
+  list: [Equipment!]!
+  metaCounter: [TotalCounter!]!
+}
+
+input EquipmentsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: EquipmentSearch = {}
+  sort: String
+}
+
+type Event {
+  _id: String!
+  createdAt: DateTime!
+  eventDesc: String!
+  eventEndDate: DateTime!
+  eventImages: [String!]!
+  eventLocation: String
+  eventStartDate: DateTime!
+  eventStatus: EventStatus!
+  eventTitle: String!
+  memberId: String!
+  resortId: String
+  updatedAt: DateTime!
+}
+
+input EventInput {
+  eventDesc: String!
+  eventEndDate: DateTime!
+  eventImages: [String!]!
+  eventLocation: String
+  eventStartDate: DateTime!
+  eventStatus: EventStatus = DRAFT
+  eventTitle: String!
+  resortId: String
+}
+
+input EventSearch {
+  resortId: String
+  text: String
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+}
+
+input EventUpdate {
+  _id: String!
+  eventDesc: String
+  eventEndDate: DateTime
+  eventImages: [String!]
+  eventLocation: String
+  eventStartDate: DateTime
+  eventStatus: EventStatus
+  eventTitle: String
+  resortId: String
+}
+
+type Events {
+  list: [Event!]!
+  metaCounter: [TotalCounter!]!
+}
+
+input EventsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: EventSearch
+  sort: String
+}
+
+type Faq {
+  _id: String!
+  createdAt: DateTime!
+  faqAnswer: String!
+  faqQuestion: String!
+  faqStatus: FaqStatus!
+  memberId: String!
+  updatedAt: DateTime!
+}
+
+input FaqInput {
+  faqAnswer: String!
+  faqQuestion: String!
+  faqStatus: FaqStatus = DRAFT
+}
+
+input FaqSearch {
+  text: String
+}
+
+enum FaqStatus {
+  DRAFT
+  PUBLISHED
+}
+
+input FaqUpdate {
+  _id: String!
+  faqAnswer: String
+  faqQuestion: String
+  faqStatus: FaqStatus
+}
+
+type Faqs {
+  list: [Faq!]!
+  metaCounter: [TotalCounter!]!
+}
+
+input FaqsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: FaqSearch
+  sort: String
+}
+
+input FollowInquiry {
+  limit: Int!
+  page: Int!
+  search: FollowSearch!
+}
+
+input FollowSearch {
+  followerId: String
+  followingId: String
+}
+
+type Follower {
+  _id: String!
+  createdAt: DateTime!
+  followerData: Member
+  followerId: String!
+  followingId: String!
+  meFollowed: [MeFollowed!]
+  meLiked: [MeLiked!]
+  updatedAt: DateTime!
+}
+
+type Followers {
+  list: [Follower!]!
+  metaCounter: [TotalCounter!]
+}
+
+type Following {
+  _id: String!
+  createdAt: DateTime!
+  followerId: String!
+  followingData: Member
+  followingId: String!
+  meFollowed: [MeFollowed!]
+  meLiked: [MeLiked!]
+  updatedAt: DateTime!
+}
+
+type Followings {
+  list: [Following!]!
+  metaCounter: [TotalCounter!]
+}
+
+type InstructorApplication {
+  _id: String!
+  applicationStatus: InstructorApplicationStatus!
+  createdAt: DateTime!
+  instructorAudience: InstructorAudience!
+  instructorExperienceYears: Int!
+  instructorLanguages: [String!]!
+  instructorLevel: InstructorLevel!
+  instructorResortId: String
+  memberDesc: String
+  memberId: String!
+  rejectionReason: String
+  reviewedAt: DateTime
+  reviewedBy: String
+  updatedAt: DateTime!
+}
+
+input InstructorApplicationInput {
+  instructorAudience: InstructorAudience!
+  instructorExperienceYears: Int!
+  instructorLanguages: [String!]!
+  instructorLevel: InstructorLevel!
+  instructorResortId: String
+  memberDesc: String
+}
+
+input InstructorApplicationReject {
+  _id: String!
+  rejectionReason: String!
+}
+
+input InstructorApplicationSearch {
+  applicationStatus: InstructorApplicationStatus
+  memberId: String
+}
+
+enum InstructorApplicationStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+type InstructorApplications {
+  list: [InstructorApplication!]!
+  metaCounter: [TotalCounter!]
+}
+
+input InstructorApplicationsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: InstructorApplicationSearch = {}
+  sort: String
+}
+
+enum InstructorAudience {
+  ADULTS
+  FAMILY
+  KIDS
+  PRIVATE
+}
+
+enum InstructorLevel {
+  ADVANCED
+  ALL
+  BEGINNER
+  INTERMEDIATE
+}
+
+input InstructorProfileUpdate {
+  instructorAudience: InstructorAudience
+  instructorExperienceYears: Int
+  instructorLanguages: [String!]
+  instructorLevel: InstructorLevel
+  instructorPrice1Week: Float
+  instructorPrice2Weeks: Float
+  instructorPrice3Weeks: Float
+  instructorPrice4Weeks: Float
+  instructorResortId: String
+}
+
+input InstructorSearch {
+  text: String
+}
+
+input InstructorsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: InstructorSearch!
+  sort: String
+}
+
+input LoginInput {
+  memberNick: String!
+  memberPassword: String!
+}
+
+input MISearch {
+  memberStatus: MemberStatus
+  memberType: MemberType
+  text: String
+}
+
+type MeFollowed {
+  followerId: String!
+  followingId: String!
+  myFollowing: Boolean!
+}
+
+type MeLiked {
+  likeRefId: String!
+  memberId: String!
+  myFavorite: Boolean!
+}
+
+type Member {
+  _id: String!
+  accessToken: String
+  createdAt: DateTime!
+  deletedAt: DateTime
+  instructorAudience: InstructorAudience
+  instructorExperienceYears: Int
+  instructorLanguages: [String!]
+  instructorLevel: InstructorLevel
+  instructorPrice1Week: Float
+  instructorPrice2Weeks: Float
+  instructorPrice3Weeks: Float
+  instructorPrice4Weeks: Float
+  instructorResortId: String
+  meFollowed: [MeFollowed!]
+  meLiked: [MeLiked!]
+  memberAddress: String
+  memberArticles: Int!
+  memberAuthType: MemberAuthType!
+  memberBlocks: Int!
+  memberComments: Int!
+  memberDesc: String
+  memberFollowers: Int!
+  memberFollowings: Int!
+  memberFullName: String
+  memberImage: String!
+  memberLikes: Int!
+  memberNick: String!
+  memberPhone: String!
+  memberPoints: Int!
+  memberProperties: Int!
+  memberRank: Int!
+  memberStatus: MemberStatus!
+  memberType: MemberType!
+  memberViews: Int!
+  memberWarnings: Int!
+  updatedAt: DateTime!
+}
+
+enum MemberAuthType {
+  EMAIL
+  PHONE
+  TELEGRAPH
+}
+
+input MemberInput {
+  memberAuthType: MemberAuthType
+  memberNick: String!
+  memberPassword: String!
+  memberPhone: String!
+  memberType: MemberType
+}
+
+enum MemberStatus {
+  ACTIVE
+  BLOCK
+  DELETE
+}
+
+enum MemberType {
+  ADMIN
+  INSTRUCTOR
+  USER
+}
+
+input MemberUpdate {
+  _id: String!
+  memberAddress: String
+  memberDesc: String
+  memberFullName: String
+  memberImage: String
+  memberNick: String
+  memberPassword: String
+  memberPhone: String
+  memberStatus: MemberStatus
+  memberType: MemberType
+}
+
+type Members {
+  list: [Member!]!
+  metaCounter: [TotalCounter!]
+}
+
+input MembersInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: MISearch!
+  sort: String
+}
+
+type Mutation {
+  approveInstructorApplicationByAdmin(applicationId: String!): InstructorApplication!
+  createBoardArticle(input: BoardArticleInput!): BoardArticle!
+  createComment(input: CommentInput!): Comment!
+  createEquipment(input: EquipmentInput!): Equipment!
+  createEvent(input: EventInput!): Event!
+  createFaq(input: FaqInput!): Faq!
+  createInstructorApplication(input: InstructorApplicationInput!): InstructorApplication!
+  createResort(input: ResortInput!): Resort!
+  imageUploader(file: Upload!, target: String!): String!
+  imagesUploader(files: [Upload!]!, target: String!): [String!]!
+  likeTargetBoardArticle(articleId: String!): BoardArticle!
+  likeTargetEquipment(equipmentId: String!): Equipment!
+  likeTargetMember(memberId: String!): Member!
+  likeTargetResort(resortId: String!): Resort!
+  login(input: LoginInput!): Member!
+  rejectInstructorApplicationByAdmin(input: InstructorApplicationReject!): InstructorApplication!
+  removeBoardArticleByAdmin(articleId: String!): BoardArticle!
+  removeCommentByAdmin(commentId: String!): Comment!
+  removeEquipmentByAdmin(equipmentId: String!): Equipment!
+  removeEventByAdmin(eventId: String!): Event!
+  removeFaqByAdmin(faqId: String!): Faq!
+  removeResortByAdmin(resortId: String!): Resort!
+  signup(input: MemberInput!): Member!
+  subscribe(input: String!): Follower!
+  unsubscribe(input: String!): Follower!
+  updateBoardArticle(input: BoardArticleUpdate!): BoardArticle!
+  updateBoardArticleByAdmin(input: BoardArticleUpdate!): BoardArticle!
+  updateComment(input: CommentUpdate!): Comment!
+  updateEquipmentByAdmin(input: EquipmentUpdate!): Equipment!
+  updateEventByAdmin(input: EventUpdate!): Event!
+  updateFaqByAdmin(input: FaqUpdate!): Faq!
+  updateInstructorProfile(input: InstructorProfileUpdate!): Member!
+  updateMember(input: MemberUpdate!): Member!
+  updateMemberByAdmin(input: MemberUpdate!): Member!
+  updateResortByAdmin(input: ResortUpdate!): Resort!
+  uploadEventImages(files: [Upload!]!): [String!]!
+}
+
+type Query {
+  chechAuth: String!
+  chechAuthRoles: String!
+  getAllBoardArticlesByAdmin(input: AllBoardArticlesInquiry!): BoardArticles!
+  getAllEquipmentsByAdmin(input: AllEquipmentsInquiry!): Equipments!
+  getAllEventsByAdmin(input: AllEventsInquiry!): Events!
+  getAllFaqsByAdmin(input: AllFaqsInquiry!): Faqs!
+  getAllInstructorApplicationsByAdmin(input: InstructorApplicationsInquiry!): InstructorApplications!
+  getAllMembersByAdmin(input: MembersInquiry!): Members!
+  getAllResortsByAdmin(input: AllResortsInquiry!): Resorts!
+  getBoardArticle(articleId: String!): BoardArticle!
+  getBoardArticles(input: BoardArticlesInquiry!): BoardArticles!
+  getComments(input: CommentsInquiry!): Comments!
+  getEquipment(equipmentId: String!): Equipment!
+  getEquipments(input: EquipmentsInquiry!): Equipments!
+  getEvent(eventId: String!): Event!
+  getEventByAdmin(eventId: String!): Event!
+  getEvents(input: EventsInquiry!): Events!
+  getFaq(faqId: String!): Faq!
+  getFaqByAdmin(faqId: String!): Faq!
+  getFaqs(input: FaqsInquiry!): Faqs!
+  getFavoriteEquipments(input: EquipmentHistoryInquiry!): Equipments!
+  getFavoriteResorts(input: ResortsInquiry!): Resorts!
+  getInstructorApplicationByAdmin(applicationId: String!): InstructorApplication!
+  getInstructors(input: InstructorsInquiry!): Members!
+  getMember(memberId: String!): Member!
+  getMemberFollowers(input: FollowInquiry!): Followers!
+  getMemberFollowings(input: FollowInquiry!): Followings!
+  getMyInstructorApplication: InstructorApplication
+  getResort(resortId: String!): Resort!
+  getResorts(input: ResortsInquiry!): Resorts!
+  getVisitedEquipments(input: EquipmentsInquiry!): Equipments!
+  getVisitedResorts(input: ResortsInquiry!): Resorts!
+  sayHello: String!
+}
+
+type Resort {
+  _id: String!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  meLiked: [MeLiked!]
+  memberData: Member
+  memberId: String!
+  resortAddress: String!
+  resortComments: Int!
+  resortDesc: String
+  resortFacilities: [ResortFacilities!]
+  resortImages: [String!]!
+  resortLevel: ResortLevel
+  resortLikes: Int!
+  resortLocation: ResortLocation!
+  resortMinDays: Int!
+  resortPricePerDay: Float!
+  resortStatus: ResortStatus!
+  resortTitle: String!
+  resortViews: Int!
+  updatedAt: DateTime!
+}
+
+enum ResortFacilities {
+  ACCOMMODATION
+  CAFE
+  EQUIPMENT_RENTAL
+  FIRST_AID
+  LOCKER
+  PARKING
+  RESTAURANT
+  SHUTTLE_BUS
+  SKI_LIFT
+  SKI_SCHOOL
+  SLED_PARK
+}
+
+input ResortInput {
+  resortAddress: String!
+  resortDesc: String
+  resortFacilities: [ResortFacilities!]
+  resortImages: [String!]!
+  resortLevel: ResortLevel
+  resortLocation: ResortLocation!
+  resortMinDays: Int = 1
+  resortPricePerDay: Float!
+  resortTitle: String!
+}
+
+enum ResortLevel {
+  ADVANCED
+  BEGINNER
+  INTERMEDIATE
+  MIXED
+}
+
+enum ResortLocation {
+  CHUNCHEON
+  GWANGJU_GYEONGGI
+  HOENGSEONG
+  HONGCHEON
+  ICHEON
+  JEONGSEON
+  MUJU
+  POCHEON
+  PYEONGCHANG
+  WONJU
+  YANGYANG
+}
+
+input ResortPricesRange {
+  end: Float!
+  start: Float!
+}
+
+input ResortSearch {
+  facilities: [ResortFacilities!]
+  levelList: [ResortLevel!]
+  locationList: [ResortLocation!]
+  memberId: String
+  pricesRange: ResortPricesRange
+  text: String
+}
+
+enum ResortStatus {
+  ACTIVE
+  DELETE
+  SOLD_OUT
+}
+
+input ResortUpdate {
+  _id: String!
+  resortAddress: String
+  resortDesc: String
+  resortFacilities: [ResortFacilities!]
+  resortImages: [String!]
+  resortLevel: ResortLevel
+  resortLocation: ResortLocation
+  resortMinDays: Int
+  resortPricePerDay: Float
+  resortStatus: ResortStatus
+  resortTitle: String
+}
+
+type Resorts {
+  list: [Resort!]!
+  metaCounter: [TotalCounter!]
+}
+
+input ResortsInquiry {
+  direction: Direction
+  limit: Int!
+  page: Int!
+  search: ResortSearch = {}
+  sort: String
+}
+
+type TotalCounter {
+  total: Int
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload

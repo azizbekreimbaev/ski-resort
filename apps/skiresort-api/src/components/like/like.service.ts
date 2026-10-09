@@ -1,10 +1,10 @@
-import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
-import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
-import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { ObjectId } from 'mongoose';
+import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
+import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
+import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { Like, MeLiked } from '../../libs/dto/like/like';
 import { LikeInput } from '../../libs/dto/like/like.input';
 import { ResortHistoryInquiry } from '../../libs/dto/resort/resort.input';
@@ -82,12 +82,13 @@ export class LikeService {
     input: ResortHistoryInquiry,
   ): Promise<Resorts> {
     const { page, limit } = input;
+    const match = { likeGroup: LikeGroup.RESORT, memberId };
     const data = await this.likeModel
       .aggregate<{
         list: { favoriteResort: Resort }[];
         metaCounter: TotalCounter[];
       }>([
-        { $match: { likeGroup: LikeGroup.RESORT, memberId } },
+        { $match: match },
         { $sort: { updatedAt: -1, _id: -1 } },
         {
           $lookup: {
@@ -129,22 +130,24 @@ export class LikeService {
         },
       ])
       .exec();
-    return {
+    const result: Resorts = {
       list: (data[0]?.list ?? []).map((entry) => entry.favoriteResort),
       metaCounter: data[0]?.metaCounter ?? [],
     };
+    return result;
   }
   public async getFavoriteEquipments(
     memberId: ObjectId | Types.ObjectId,
     input: EquipmentHistoryInquiry,
   ): Promise<Equipments> {
     const { page, limit } = input;
+    const match = { likeGroup: LikeGroup.EQUIPMENT, memberId };
     const data = await this.likeModel
       .aggregate<{
         list: { favoriteEquipment: Equipment }[];
         metaCounter: TotalCounter[];
       }>([
-        { $match: { likeGroup: LikeGroup.EQUIPMENT, memberId } },
+        { $match: match },
         { $sort: { updatedAt: -1, _id: -1 } },
         {
           $lookup: {
@@ -179,7 +182,7 @@ export class LikeService {
         },
       ])
       .exec();
-    return {
+    const result: Equipments = {
       list: (data[0]?.list ?? []).map((entry) => ({
         ...entry.favoriteEquipment,
         equipmentRentalRates: [
@@ -188,5 +191,6 @@ export class LikeService {
       })),
       metaCounter: data[0]?.metaCounter ?? [],
     };
+    return result;
   }
 }

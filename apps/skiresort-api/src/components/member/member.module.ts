@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { MemberResolver } from './member.resolver';
 import { MemberService } from './member.service';
-import { MongooseModule } from '@nestjs/mongoose';
 import MemberSchema from '../../schemas/Member.model';
 import { AuthModule } from '../auth/auth.module';
 import { ViewModule } from '../view/view.module';
@@ -10,15 +10,15 @@ import FollowSchema from '../../schemas/Follow.model';
 import { ResortModule } from '../resort/resort.module';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: "Member", schema: MemberSchema }]),
-        MongooseModule.forFeature([{ name: "Follow", schema: FollowSchema }]),
-        AuthModule,
+  imports: [
+    MongooseModule.forFeature([{ name: 'Member', schema: MemberSchema }]),
+    MongooseModule.forFeature([{ name: 'Follow', schema: FollowSchema }]),
+    AuthModule,
     ResortModule,
-        ViewModule,
-        LikeModule
-    ],
-    providers: [MemberResolver, MemberService],
-    exports: [MemberService]
+    ViewModule,
+    LikeModule,
+  ],
+  providers: [MemberResolver, MemberService],
+  exports: [MemberService],
 })
-export class MemberModule { }
+export class MemberModule {}

@@ -7,9 +7,9 @@ import { Event, Events } from '../../libs/dto/event/event';
 import {
   AllEventsInquiry,
   EventInput,
-  EventUpdate,
   EventsInquiry,
 } from '../../libs/dto/event/event.input';
+import { EventUpdate } from '../../libs/dto/event/event.update';
 import { MemberType } from '../../libs/enums/member.enum';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -21,75 +21,75 @@ export class EventResolver {
   constructor(private readonly eventService: EventService) {}
 
   @Query(() => Event)
-  getEvent(@Args('eventId') eventId: string) {
-    return this.eventService.getEvent(eventId);
+  public async getEvent(@Args('eventId') eventId: string): Promise<Event> {
+    return await this.eventService.getEvent(eventId);
   }
 
   @Query(() => Events)
-  getEvents(@Args('input') input: EventsInquiry) {
-    return this.eventService.getEvents(input);
+  public async getEvents(@Args('input') input: EventsInquiry): Promise<Events> {
+    return await this.eventService.getEvents(input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Event)
-  createEvent(
+  public async createEvent(
     @Args('input') input: EventInput,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.createEvent(adminId, input);
+  ): Promise<Event> {
+    return await this.eventService.createEvent(adminId, input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Event)
-  updateEventByAdmin(
+  public async updateEventByAdmin(
     @Args('input') input: EventUpdate,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.updateEventByAdmin(adminId, input);
+  ): Promise<Event> {
+    return await this.eventService.updateEventByAdmin(adminId, input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Event)
-  removeEventByAdmin(
+  public async removeEventByAdmin(
     @Args('eventId') eventId: string,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.removeEventByAdmin(adminId, eventId);
+  ): Promise<Event> {
+    return await this.eventService.removeEventByAdmin(adminId, eventId);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Event)
-  getEventByAdmin(
+  public async getEventByAdmin(
     @Args('eventId') eventId: string,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.getEventByAdmin(adminId, eventId);
+  ): Promise<Event> {
+    return await this.eventService.getEventByAdmin(adminId, eventId);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Events)
-  getAllEventsByAdmin(
+  public async getAllEventsByAdmin(
     @Args('input') input: AllEventsInquiry,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.getAllEventsByAdmin(adminId, input);
+  ): Promise<Events> {
+    return await this.eventService.getAllEventsByAdmin(adminId, input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => [String])
-  uploadEventImages(
+  public async uploadEventImages(
     // graphql-upload v13 exposes its scalar without usable ESLint type metadata.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     @Args('files', { type: () => [GraphQLUpload] })
     files: Promise<ImageUpload>[],
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.eventService.uploadEventImages(adminId, files);
+  ): Promise<string[]> {
+    return await this.eventService.uploadEventImages(adminId, files);
   }
 }

@@ -8,7 +8,6 @@ import {
 import { Resort, Resorts } from '../../libs/dto/resort/resort';
 import {
   AllResortsInquiry,
-  ResortHistoryInquiry,
   ResortInput,
   ResortsInquiry,
 } from '../../libs/dto/resort/resort.input';
@@ -23,12 +22,12 @@ import { ResortService } from './resort.service';
 
 @Resolver()
 export class ResortResolver {
-  constructor(private readonly resortService: ResortService) { }
+  constructor(private readonly resortService: ResortService) {}
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Resort)
-  createResort(
+  public createResort(
     @Args('input') input: ResortInput,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resort> {
@@ -37,7 +36,7 @@ export class ResortResolver {
 
   @UseGuards(WithoutGuard)
   @Query(() => Resort)
-  getResort(
+  public getResort(
     @Args('resortId') resortId: string,
     @AuthMember('_id') memberId: Types.ObjectId | null,
   ): Promise<Resort> {
@@ -49,7 +48,7 @@ export class ResortResolver {
 
   @UseGuards(WithoutGuard)
   @Query(() => Resorts)
-  getResorts(
+  public getResorts(
     @Args('input') input: ResortsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId | null,
   ): Promise<Resorts> {
@@ -59,7 +58,7 @@ export class ResortResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Resorts)
-  getAllResortsByAdmin(
+  public getAllResortsByAdmin(
     @Args('input') input: AllResortsInquiry,
   ): Promise<Resorts> {
     return this.resortService.getAllResortsByAdmin(input);
@@ -68,7 +67,9 @@ export class ResortResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Resort)
-  updateResortByAdmin(@Args('input') input: ResortUpdate): Promise<Resort> {
+  public updateResortByAdmin(
+    @Args('input') input: ResortUpdate,
+  ): Promise<Resort> {
     input._id = shapeIntoMongoObjectId(input._id) as Types.ObjectId;
     return this.resortService.updateResortByAdmin(input);
   }
@@ -76,7 +77,9 @@ export class ResortResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Resort)
-  removeResortByAdmin(@Args('resortId') resortId: string): Promise<Resort> {
+  public removeResortByAdmin(
+    @Args('resortId') resortId: string,
+  ): Promise<Resort> {
     return this.resortService.removeResortByAdmin(
       validateMongoObjectId(resortId),
     );
@@ -84,7 +87,7 @@ export class ResortResolver {
 
   @UseGuards(AuthGuard)
   @Mutation(() => Resort)
-  likeTargetResort(
+  public likeTargetResort(
     @Args('resortId') resortId: string,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resort> {
@@ -96,7 +99,7 @@ export class ResortResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => Resorts)
-  getFavoriteResorts(
+  public getFavoriteResorts(
     @Args('input') input: ResortsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resorts> {
@@ -105,7 +108,7 @@ export class ResortResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => Resorts)
-  getVisitedResorts(
+  public getVisitedResorts(
     @Args('input') input: ResortsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Resorts> {

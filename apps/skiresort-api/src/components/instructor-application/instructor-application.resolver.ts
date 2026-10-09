@@ -27,7 +27,7 @@ export class InstructorApplicationResolver {
   @Roles(MemberType.USER)
   @UseGuards(RolesGuard)
   @Mutation(() => InstructorApplication)
-  createInstructorApplication(
+  public createInstructorApplication(
     @Args('input') input: InstructorApplicationInput,
     @AuthMember('_id') memberId: ObjectId,
   ): Promise<InstructorApplication> {
@@ -36,7 +36,7 @@ export class InstructorApplicationResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => InstructorApplication, { nullable: true })
-  getMyInstructorApplication(
+  public getMyInstructorApplication(
     @AuthMember('_id') memberId: ObjectId,
   ): Promise<InstructorApplication | null> {
     return this.applicationService.getMyInstructorApplication(memberId);
@@ -45,7 +45,7 @@ export class InstructorApplicationResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => InstructorApplications)
-  getAllInstructorApplicationsByAdmin(
+  public getAllInstructorApplicationsByAdmin(
     @Args('input') input: InstructorApplicationsInquiry,
     @AuthMember('_id') adminId: ObjectId,
   ): Promise<InstructorApplications> {
@@ -58,7 +58,7 @@ export class InstructorApplicationResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => InstructorApplication)
-  getInstructorApplicationByAdmin(
+  public getInstructorApplicationByAdmin(
     @Args('applicationId') applicationId: string,
     @AuthMember('_id') adminId: ObjectId,
   ): Promise<InstructorApplication> {
@@ -71,7 +71,7 @@ export class InstructorApplicationResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => InstructorApplication)
-  approveInstructorApplicationByAdmin(
+  public approveInstructorApplicationByAdmin(
     @Args('applicationId') applicationId: string,
     @AuthMember('_id') adminId: ObjectId,
   ): Promise<InstructorApplication> {
@@ -84,7 +84,7 @@ export class InstructorApplicationResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => InstructorApplication)
-  rejectInstructorApplicationByAdmin(
+  public rejectInstructorApplicationByAdmin(
     @Args('input') input: InstructorApplicationReject,
     @AuthMember('_id') adminId: ObjectId,
   ): Promise<InstructorApplication> {

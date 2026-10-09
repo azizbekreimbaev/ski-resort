@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { BoardArticleResolver } from './board-article.resolver';
 import { BoardArticleService } from './board-article.service';
-import { MongooseModule } from '@nestjs/mongoose';
 import BoardArticleSchema from '../../schemas/BoardArticle.model';
 import { AuthModule } from '../auth/auth.module';
 import { ViewModule } from '../view/view.module';
@@ -9,18 +9,21 @@ import { MemberModule } from '../member/member.module';
 import { LikeModule } from '../like/like.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{
-    name: "BoardArticle",
-    schema: BoardArticleSchema
-  }]),
+  imports: [
+    MongooseModule.forFeature([
+      {
+        name: 'BoardArticle',
+        schema: BoardArticleSchema,
+      },
+    ]),
 
     AuthModule,
     ViewModule,
     MemberModule,
-    LikeModule
+    LikeModule,
   ],
 
   providers: [BoardArticleResolver, BoardArticleService],
-  exports: [BoardArticleService]
+  exports: [BoardArticleService],
 })
-export class BoardArticleModule { }
+export class BoardArticleModule {}

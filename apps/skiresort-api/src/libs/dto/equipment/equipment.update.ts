@@ -28,8 +28,10 @@ const trimString = ({ value }: { value: unknown }) =>
 
 @InputType()
 export class EquipmentUpdate {
-  @IsMongoId() @Field(() => String) _id!: string | Types.ObjectId;
-  
+  @IsMongoId()
+  @Field(() => String)
+  _id!: string | Types.ObjectId;
+
   @IsOptional()
   @IsMongoId()
   @Field(() => String, { nullable: true })

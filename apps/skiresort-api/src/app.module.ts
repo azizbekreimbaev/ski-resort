@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config'
-import { GraphQLModule } from '@nestjs/graphql'
-import { ApolloDriver } from '@nestjs/apollo'
 import { AppResolver } from './app.resolver';
 import { ComponentsModule } from './components/components.module';
 import { DatabaseModule } from './database/database.module';
@@ -20,16 +20,22 @@ import { SocketModule } from './socket/socket.module';
       autoSchemaFile: true,
       formatError: (errors: T) => {
         const graphQLFormattedError = {
-          extensions: { code: errors?.extensions?.code },  // BOSHQA YAXSHIROQ VARIANT TOPILMADI
-          message: errors?.extensions?.exception?.response?.message || errors?.extensions?.response?.message || errors?.message,
+          extensions: { code: errors?.extensions?.code }, // BOSHQA YAXSHIROQ VARIANT TOPILMADI
+          message:
+            errors?.extensions?.exception?.response?.message ||
+            errors?.extensions?.response?.message ||
+            errors?.message,
         };
-        console.log("GRAPHQL GLOBAL ERROR", graphQLFormattedError)
-        return graphQLFormattedError
-      }
+        console.log('GRAPHQL GLOBAL ERROR', graphQLFormattedError);
+        return graphQLFormattedError;
+      },
     }),
-    ComponentsModule, DatabaseModule, SocketModule],
+    ComponentsModule,
+    DatabaseModule,
+    SocketModule,
+  ],
 
   controllers: [AppController],
   providers: [AppService, AppResolver],
 })
-export class AppModule { }
+export class AppModule {}

@@ -1,7 +1,13 @@
-import { ObjectId } from 'bson'
 import { BadRequestException } from '@nestjs/common';
+import { ObjectId } from 'bson';
 import { Types } from 'mongoose';
+// IMAGE CONFIGURATION (config.js)
+import { v4 as uuidv4 } from 'uuid';
+import * as path from 'path';
+import { from } from 'rxjs';
+import { pipeline } from 'stream';
 import { LikeGroup } from './enums/like.enum';
+import { T } from './types/common';
 
 export const availableInstructorSorts = [
   'createdAt',
@@ -10,24 +16,22 @@ export const availableInstructorSorts = [
   'memberViews',
   'memberRank',
 ];
-export const availableMemberSorts = ["createdAt", "updatedAt", "memberLikes", "memberViews"]
-
-// IMAGE CONFIGURATION (config.js)
-import { v4 as uuidv4 } from 'uuid';
-import * as path from 'path';
-import { from } from 'rxjs';
-import { T } from './types/common';
-import { pipeline } from 'stream';
+export const availableMemberSorts = [
+  'createdAt',
+  'updatedAt',
+  'memberLikes',
+  'memberViews',
+];
 
 export const validMimeTypes = ['image/png', 'image/jpg', 'image/jpeg'];
 export const getSerialForImage = (filename: string) => {
-    const ext = path.parse(filename).ext;
-    return uuidv4() + ext;
+  const ext = path.parse(filename).ext;
+  return uuidv4() + ext;
 };
 
 export const shapeIntoMongoObjectId = (target: any) => {
-    return typeof target === "string" ? new ObjectId(target) : target
-}
+  return typeof target === 'string' ? new ObjectId(target) : target;
+};
 
 export const validateMongoObjectId = (value: unknown): Types.ObjectId => {
   if (value instanceof Types.ObjectId) return value;
@@ -37,22 +41,23 @@ export const validateMongoObjectId = (value: unknown): Types.ObjectId => {
   return shapeIntoMongoObjectId(value) as Types.ObjectId;
 };
 
+export const availableBoardArticleSorts = [
+  'createdAt',
+  'updatedAt',
+  'articleLikes',
+  'articleViews',
+];
 
-
-
-export const availableBoardArticleSorts = ['createdAt', 'updatedAt', 'articleLikes', 'articleViews']
-
-export const availableCommentSorts = ['createdAt', 'updatedAt']
+export const availableCommentSorts = ['createdAt', 'updatedAt'];
 
 export const lookupMember = {
-    $lookup: {
-        from: 'members',
-        localField: 'memberId',
-        foreignField: '_id',
-        as: 'memberData',
-    },
+  $lookup: {
+    from: 'members',
+    localField: 'memberId',
+    foreignField: '_id',
+    as: 'memberData',
+  },
 };
-
 
 //**COMPLEX LOOKUP */
 
@@ -97,63 +102,64 @@ export const lookupAuthMemberLiked = (
 };
 
 interface LookupAuthMemberFollowed {
-    followerId: T,
-    followingId: string
+  followerId: T;
+  followingId: string;
 }
 
 export const lookupAuthMemberFollowed = (input: LookupAuthMemberFollowed) => {
-    const { followerId, followingId } = input
-    return {
-        $lookup: {
-            from: "follows",
-            let: {
-                localFollowerId: followerId,
-                localFollowingId: followingId,
-                localMyFavorite: true
+  const { followerId, followingId } = input;
+  return {
+    $lookup: {
+      from: 'follows',
+      let: {
+        localFollowerId: followerId,
+        localFollowingId: followingId,
+        localMyFavorite: true,
+      },
+
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ['$followerId', '$$localFollowerId'] },
+                { $eq: ['$followingId', '$$localFollowingId'] },
+              ],
             },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            followerId: 1,
+            followingId: 1,
+            myFollowing: '$$localMyFavorite',
+          },
+        },
+      ],
 
-            pipeline: [
-                {
-                    $match: {
-                        $expr: {
-                            $and: [{ $eq: ["$followerId", "$$localFollowerId"] }, { $eq: ["$followingId", "$$localFollowingId"] }]
-                        },
-
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        followerId: 1,
-                        followingId: 1,
-                        myFollowing: "$$localMyFavorite",
-                    }
-                }
-            ],
-
-            as: "meFollowed"
-
-        }
-    }
-}
+      as: 'meFollowed',
+    },
+  };
+};
 
 export const lookupFollowingData = {
-    $lookup: {
-        from: "members",
-        localField: "followingId",
-        foreignField: "_id",
-        as: "followingData"
-    }
-}
+  $lookup: {
+    from: 'members',
+    localField: 'followingId',
+    foreignField: '_id',
+    as: 'followingData',
+  },
+};
 
 export const lookupFollowerData = {
-    $lookup: {
-        from: "members",
-        localField: "followerId",
-        foreignField: "_id",
-        as: "followerData"
-    }
-}
+  $lookup: {
+    from: 'members',
+    localField: 'followerId',
+    foreignField: '_id',
+    as: 'followerData',
+  },
+};
 
 export const lookupFavorite = {
   $lookup: {

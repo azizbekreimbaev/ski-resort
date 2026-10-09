@@ -1,4 +1,3 @@
-import { EquipmentService } from '../equipment/equipment.service';
 // comment.service.ts
 import {
   BadRequestException,
@@ -8,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
+import { EquipmentService } from '../equipment/equipment.service';
 import { MemberService } from '../member/member.service';
 import { ResortService } from '../resort/resort.service';
 import { BoardArticleService } from '../board-article/board-article.service';
@@ -32,7 +32,7 @@ export class CommentService {
     private readonly resortService: ResortService,
     private readonly boardArticleService: BoardArticleService,
     private readonly equipmentService: EquipmentService,
-  ) { }
+  ) {}
 
   public async createComment(
     memberId: ObjectId,

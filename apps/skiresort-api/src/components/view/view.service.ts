@@ -1,10 +1,10 @@
-import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
-import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
-import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { ObjectId } from 'mongoose';
+import { Equipment, Equipments } from '../../libs/dto/equipment/equipment';
+import { EquipmentHistoryInquiry } from '../../libs/dto/equipment/equipment.input';
+import { EquipmentStatus } from '../../libs/enums/equipment.enum';
 import { View } from '../../libs/dto/view/view';
 import { ViewInput } from '../../libs/dto/view/view.input';
 import { ResortHistoryInquiry } from '../../libs/dto/resort/resort.input';
@@ -65,12 +65,13 @@ export class ViewService {
     input: ResortHistoryInquiry,
   ): Promise<Resorts> {
     const { page, limit } = input;
+    const match = { viewGroup: ViewGroup.RESORT, memberId };
     const data = await this.viewModel
       .aggregate<{
         list: { visitedResort: Resort }[];
         metaCounter: TotalCounter[];
       }>([
-        { $match: { viewGroup: ViewGroup.RESORT, memberId } },
+        { $match: match },
         { $sort: { createdAt: -1, _id: -1 } },
         {
           $lookup: {
@@ -112,22 +113,24 @@ export class ViewService {
         },
       ])
       .exec();
-    return {
+    const result: Resorts = {
       list: (data[0]?.list ?? []).map((entry) => entry.visitedResort),
       metaCounter: data[0]?.metaCounter ?? [],
     };
+    return result;
   }
   public async getVisitedEquipments(
     memberId: ObjectId | Types.ObjectId,
     input: EquipmentHistoryInquiry,
   ): Promise<Equipments> {
     const { page, limit } = input;
+    const match = { viewGroup: ViewGroup.EQUIPMENT, memberId };
     const data = await this.viewModel
       .aggregate<{
         list: { visitedEquipment: Equipment }[];
         metaCounter: TotalCounter[];
       }>([
-        { $match: { viewGroup: ViewGroup.EQUIPMENT, memberId } },
+        { $match: match },
         { $sort: { createdAt: -1, _id: -1 } },
         {
           $lookup: {
@@ -162,7 +165,7 @@ export class ViewService {
         },
       ])
       .exec();
-    return {
+    const result: Equipments = {
       list: (data[0]?.list ?? []).map((entry) => ({
         ...entry.visitedEquipment,
         equipmentRentalRates: [
@@ -171,5 +174,6 @@ export class ViewService {
       })),
       metaCounter: data[0]?.metaCounter ?? [],
     };
+    return result;
   }
 }

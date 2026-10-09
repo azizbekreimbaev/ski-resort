@@ -1,11 +1,14 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import { Model, Types } from 'mongoose';
 import type { ObjectId } from 'mongoose';
 import {
@@ -30,14 +33,11 @@ import {
 } from '../../libs/config';
 import { LikeService } from '../like/like.service';
 import { ViewService } from '../view/view.service';
-import { plainToInstance } from 'class-transformer';
-import { validateSync } from 'class-validator';
 import { EquipmentAudience } from '../../libs/enums/equipment.enum';
 import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 import { Member } from '../../libs/dto/member/member';
 import { ResortService } from '../resort/resort.service';
 import { normalizeEquipmentSize } from './equipment-size';
-import { ForbiddenException } from '@nestjs/common';
 
 type MongoId = Types.ObjectId | ObjectId;
 type EquipmentCounter =
@@ -84,83 +84,6 @@ export class EquipmentService {
     return this.output(equipment.toObject());
   }
 
-  private async assertAdmin(adminId: MongoId): Promise<void> {
-    const member = await this.memberModel
-      .findOne({
-        _id: adminId,
-        memberType: MemberType.ADMIN,
-        memberStatus: MemberStatus.ACTIVE,
-      })
-      .lean()
-      .exec();
-    if (!member) throw new ForbiddenException('Active ADMIN required');
-  }
-
-  private output(equipment: Equipment): Equipment {
-    return {
-      ...equipment,
-      equipmentRentalRates: [...equipment.equipmentRentalRates].sort(
-        (a, b) => a.durationHours - b.durationHours,
-      ),
-      meLiked: equipment.meLiked ?? [],
-    };
-  }
-
-  private normalizeContent(
-    input: EquipmentInput | EquipmentUpdate | Record<string, unknown>,
-  ): Record<string, unknown> {
-    const values = this.pickContent(input as EquipmentInput);
-    const candidate = plainToInstance(EquipmentInput, {
-      ...values,
-      resortId:
-        values.resortId == null
-          ? null
-          : validateMongoObjectId(values.resortId).toHexString(),
-    });
-    if (validateSync(candidate).length)
-      throw new BadRequestException('Invalid equipment input');
-    const rates = candidate.equipmentRentalRates;
-    if (new Set(rates.map((rate) => rate.durationHours)).size !== rates.length)
-      throw new BadRequestException('Duplicate rental duration');
-    const purchasable = candidate.equipmentPurchasable;
-    const price = candidate.equipmentPurchasePrice ?? null;
-    if (purchasable ? price === null : price !== null)
-      throw new BadRequestException(
-        'Purchase price must match purchasable capability',
-      );
-    return {
-      ...this.pickContent(candidate),
-      resortId:
-        candidate.resortId == null
-          ? null
-          : validateMongoObjectId(candidate.resortId),
-      equipmentName: candidate.equipmentName.trim(),
-      equipmentBrand: candidate.equipmentBrand?.trim() ?? null,
-      equipmentSize: normalizeEquipmentSize(
-        candidate.equipmentCategory,
-        candidate.equipmentSize ?? null,
-      ),
-      equipmentRentalRates: rates
-        .map((rate) => ({
-          durationHours: rate.durationHours,
-          price: rate.price,
-        }))
-        .sort((a, b) => a.durationHours - b.durationHours),
-      equipmentPurchasePrice: price,
-    };
-  }
-
-  public async assertVisibleEquipment(
-    equipmentId: MongoId,
-  ): Promise<Equipment> {
-    const equipment = await this.equipmentModel
-      .findOne({ _id: equipmentId, equipmentStatus: { $in: visibleStatuses } })
-      .lean<Equipment>()
-      .exec();
-    if (!equipment) throw new NotFoundException('Equipment not found');
-    return this.output(equipment);
-  }
-
   public async getEquipment(
     memberId: MongoId | null,
     equipmentId: MongoId,
@@ -204,14 +127,158 @@ export class EquipmentService {
     return this.output(equipment);
   }
 
+  public async equipmentStatsEditor(input: {
+    _id: MongoId;
+    targetKey: EquipmentCounter;
+    modifier: number;
+  }): Promise<Equipment> {
+    const { _id, targetKey, modifier } = input;
+    if (
+      !['equipmentViews', 'equipmentLikes', 'equipmentComments'].includes(
+        targetKey,
+      ) ||
+      !Number.isInteger(modifier) ||
+      ![-1, 1].includes(modifier)
+    ) {
+      throw new BadRequestException('Invalid equipment counter change');
+    }
+    const match: Record<string, unknown> = { _id };
+    if (modifier > 0) match.equipmentStatus = { $in: visibleStatuses };
+    // Deleted equipment records still receive decrements when comments are removed.
+    if (modifier < 0) match[targetKey] = { $gte: -modifier };
+    const equipment = await this.equipmentModel
+      .findOneAndUpdate(
+        match,
+        { $inc: { [targetKey]: modifier } },
+        { new: true },
+      )
+      .lean<Equipment>()
+      .exec();
+    if (!equipment)
+      throw new ConflictException('Equipment counter could not be updated');
+    return equipment;
+  }
+
   public async getEquipments(
     memberId: MongoId | null,
     input: EquipmentsInquiry,
   ): Promise<Equipments> {
-    return this.listEquipments(memberId, input, {
+    const match: Record<string, unknown> = {
       equipmentStatus: { $in: visibleStatuses },
-      ...this.searchMatch(input.search),
-    });
+    };
+    this.shapeMatchQuery(match, input);
+    return await this.listEquipments(memberId, input, match);
+  }
+
+  private shapeMatchQuery(
+    match: Record<string, unknown>,
+    input: EquipmentsInquiry | AllEquipmentsInquiry,
+  ): void {
+    const { search } = input;
+    if (search === null) throw new BadRequestException('Search cannot be null');
+    if (!search) return;
+    if (validateSync(plainToInstance(EquipmentSearch, search)).length)
+      throw new BadRequestException('Invalid equipment search');
+    if (search.resortId)
+      match.resortId = validateMongoObjectId(search.resortId);
+    if (search.categoryList?.length)
+      match.equipmentCategory = { $in: search.categoryList };
+    if (search.audienceList?.length) {
+      const audiences = new Set(search.audienceList);
+      if (
+        audiences.has(EquipmentAudience.KIDS) ||
+        audiences.has(EquipmentAudience.ADULTS)
+      )
+        audiences.add(EquipmentAudience.ALL);
+      match.equipmentAudience = { $in: [...audiences] };
+    }
+    if (search.sizeList?.length) {
+      if (search.categoryList?.length !== 1)
+        throw new BadRequestException(
+          'Size filtering requires exactly one category',
+        );
+      match.equipmentSize = {
+        $in: search.sizeList.map((size) =>
+          normalizeEquipmentSize(search.categoryList![0], size),
+        ),
+      };
+    }
+    const escape = (value: string) =>
+      value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (search.equipmentBrand)
+      match.equipmentBrand = {
+        $regex: '^' + escape(search.equipmentBrand.trim()) + '$',
+        $options: 'i',
+      };
+    if (search.text?.trim())
+      match.equipmentName = {
+        $regex: escape(search.text.trim()),
+        $options: 'i',
+      };
+    if (search.equipmentPurchasable != null)
+      match.equipmentPurchasable = search.equipmentPurchasable;
+    const range = (value: { start: number; end: number }) => {
+      if (value.start > value.end)
+        throw new BadRequestException('Price range start must not exceed end');
+      return { $gte: value.start, $lte: value.end };
+    };
+    if (search.rentalPricesRange && search.rentalDurationHours == null)
+      throw new BadRequestException('Rental price filtering requires duration');
+    if (search.rentalDurationHours != null) {
+      const rate: Record<string, unknown> = {
+        durationHours: search.rentalDurationHours,
+      };
+      if (search.rentalPricesRange)
+        rate.price = range(search.rentalPricesRange);
+      match.equipmentRentalRates = { $elemMatch: rate };
+    }
+    if (search.purchasePricesRange) {
+      if (search.equipmentPurchasable === false)
+        throw new BadRequestException(
+          'Purchase price requires purchasable equipment',
+        );
+      match.equipmentPurchasable = true;
+      match.equipmentPurchasePrice = range(search.purchasePricesRange);
+    }
+  }
+
+  public getFavoriteEquipments(
+    memberId: MongoId,
+    input: EquipmentHistoryInquiry,
+  ): Promise<Equipments> {
+    this.validatePagination(input);
+    return this.likeService.getFavoriteEquipments(memberId, input);
+  }
+
+  public getVisitedEquipments(
+    memberId: MongoId,
+    input: EquipmentHistoryInquiry,
+  ): Promise<Equipments> {
+    this.validatePagination(input);
+    return this.viewService.getVisitedEquipments(memberId, input);
+  }
+
+  public async likeTargetEquipment(
+    memberId: MongoId,
+    equipmentId: MongoId,
+  ): Promise<Equipment> {
+    let equipment = await this.assertVisibleEquipment(equipmentId);
+    const input = this.likeInput(memberId, equipmentId);
+    const change = await this.likeService.toggleLikeWithChange(input);
+    if (change.modifier !== 0) {
+      try {
+        equipment = await this.equipmentStatsEditor({
+          _id: equipmentId,
+          targetKey: 'equipmentLikes',
+          modifier: change.modifier,
+        });
+      } catch (error) {
+        await this.compensate(change.undo, 'like');
+        throw error;
+      }
+    }
+    equipment.meLiked = await this.likeService.checkLikeExistence(input);
+    return this.output(equipment);
   }
 
   public async getAllEquipmentsByAdmin(
@@ -219,10 +286,11 @@ export class EquipmentService {
     input: AllEquipmentsInquiry,
   ): Promise<Equipments> {
     await this.assertAdmin(adminId);
-    const match = this.searchMatch(input.search);
+    const match: Record<string, unknown> = {};
+    this.shapeMatchQuery(match, input);
     if (input.search?.equipmentStatus)
       match.equipmentStatus = input.search.equipmentStatus;
-    return this.listEquipments(null, input, match);
+    return await this.listEquipments(null, input, match);
   }
 
   public async updateEquipmentByAdmin(
@@ -300,43 +368,15 @@ export class EquipmentService {
     return this.output(equipment);
   }
 
-  public async likeTargetEquipment(
-    memberId: MongoId,
+  public async assertVisibleEquipment(
     equipmentId: MongoId,
   ): Promise<Equipment> {
-    let equipment = await this.assertVisibleEquipment(equipmentId);
-    const input = this.likeInput(memberId, equipmentId);
-    const change = await this.likeService.toggleLikeWithChange(input);
-    if (change.modifier !== 0) {
-      try {
-        equipment = await this.equipmentStatsEditor({
-          _id: equipmentId,
-          targetKey: 'equipmentLikes',
-          modifier: change.modifier,
-        });
-      } catch (error) {
-        await this.compensate(change.undo, 'like');
-        throw error;
-      }
-    }
-    equipment.meLiked = await this.likeService.checkLikeExistence(input);
+    const equipment = await this.equipmentModel
+      .findOne({ _id: equipmentId, equipmentStatus: { $in: visibleStatuses } })
+      .lean<Equipment>()
+      .exec();
+    if (!equipment) throw new NotFoundException('Equipment not found');
     return this.output(equipment);
-  }
-
-  public getFavoriteEquipments(
-    memberId: MongoId,
-    input: EquipmentHistoryInquiry,
-  ): Promise<Equipments> {
-    this.validatePagination(input);
-    return this.likeService.getFavoriteEquipments(memberId, input);
-  }
-
-  public getVisitedEquipments(
-    memberId: MongoId,
-    input: EquipmentHistoryInquiry,
-  ): Promise<Equipments> {
-    this.validatePagination(input);
-    return this.viewService.getVisitedEquipments(memberId, input);
   }
 
   public async commentRemoved(equipmentId: MongoId): Promise<void> {
@@ -357,6 +397,72 @@ export class EquipmentService {
     }
   }
 
+  private async assertAdmin(adminId: MongoId): Promise<void> {
+    const member = await this.memberModel
+      .findOne({
+        _id: adminId,
+        memberType: MemberType.ADMIN,
+        memberStatus: MemberStatus.ACTIVE,
+      })
+      .lean()
+      .exec();
+    if (!member) throw new ForbiddenException('Active ADMIN required');
+  }
+
+  private normalizeContent(
+    input: EquipmentInput | EquipmentUpdate | Record<string, unknown>,
+  ): Record<string, unknown> {
+    const values = this.pickContent(input as EquipmentInput);
+    const candidate = plainToInstance(EquipmentInput, {
+      ...values,
+      resortId:
+        values.resortId == null
+          ? null
+          : validateMongoObjectId(values.resortId).toHexString(),
+    });
+    if (validateSync(candidate).length)
+      throw new BadRequestException('Invalid equipment input');
+    const rates = candidate.equipmentRentalRates;
+    if (new Set(rates.map((rate) => rate.durationHours)).size !== rates.length)
+      throw new BadRequestException('Duplicate rental duration');
+    const purchasable = candidate.equipmentPurchasable;
+    const price = candidate.equipmentPurchasePrice ?? null;
+    if (purchasable ? price === null : price !== null)
+      throw new BadRequestException(
+        'Purchase price must match purchasable capability',
+      );
+    return {
+      ...this.pickContent(candidate),
+      resortId:
+        candidate.resortId == null
+          ? null
+          : validateMongoObjectId(candidate.resortId),
+      equipmentName: candidate.equipmentName.trim(),
+      equipmentBrand: candidate.equipmentBrand?.trim() ?? null,
+      equipmentSize: normalizeEquipmentSize(
+        candidate.equipmentCategory,
+        candidate.equipmentSize ?? null,
+      ),
+      equipmentRentalRates: rates
+        .map((rate) => ({
+          durationHours: rate.durationHours,
+          price: rate.price,
+        }))
+        .sort((a, b) => a.durationHours - b.durationHours),
+      equipmentPurchasePrice: price,
+    };
+  }
+
+  private output(equipment: Equipment): Equipment {
+    return {
+      ...equipment,
+      equipmentRentalRates: [...equipment.equipmentRentalRates].sort(
+        (a, b) => a.durationHours - b.durationHours,
+      ),
+      meLiked: equipment.meLiked ?? [],
+    };
+  }
+
   private validatePagination(input: EquipmentHistoryInquiry): void {
     if (
       !Number.isInteger(input.page) ||
@@ -366,120 +472,6 @@ export class EquipmentService {
       input.limit > 100
     )
       throw new BadRequestException('Invalid equipment pagination');
-  }
-
-  public async equipmentStatsEditor(input: {
-    _id: MongoId;
-    targetKey: EquipmentCounter;
-    modifier: number;
-  }): Promise<Equipment> {
-    const { _id, targetKey, modifier } = input;
-    if (
-      !['equipmentViews', 'equipmentLikes', 'equipmentComments'].includes(
-        targetKey,
-      ) ||
-      !Number.isInteger(modifier) ||
-      ![-1, 1].includes(modifier)
-    ) {
-      throw new BadRequestException('Invalid equipment counter change');
-    }
-    const match: Record<string, unknown> = { _id };
-    if (modifier > 0) match.equipmentStatus = { $in: visibleStatuses };
-    // Deleted equipment records still receive decrements when comments are removed.
-    if (modifier < 0) match[targetKey] = { $gte: -modifier };
-    const equipment = await this.equipmentModel
-      .findOneAndUpdate(
-        match,
-        { $inc: { [targetKey]: modifier } },
-        { new: true },
-      )
-      .lean<Equipment>()
-      .exec();
-    if (!equipment)
-      throw new ConflictException('Equipment counter could not be updated');
-    return equipment;
-  }
-
-  private pickContent(
-    input: EquipmentInput | EquipmentUpdate,
-  ): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
-    for (const key of contentFields) {
-      if (input[key] !== undefined) result[key] = input[key];
-    }
-    return result;
-  }
-
-  private searchMatch(
-    search?: EquipmentSearch | null,
-  ): Record<string, unknown> {
-    const match: Record<string, unknown> = {};
-    if (search === null) throw new BadRequestException('Search cannot be null');
-    if (!search) return match;
-    if (validateSync(plainToInstance(EquipmentSearch, search)).length)
-      throw new BadRequestException('Invalid equipment search');
-    if (search.resortId)
-      match.resortId = validateMongoObjectId(search.resortId);
-    if (search.categoryList?.length)
-      match.equipmentCategory = { $in: search.categoryList };
-    if (search.audienceList?.length) {
-      const audiences = new Set(search.audienceList);
-      if (
-        audiences.has(EquipmentAudience.KIDS) ||
-        audiences.has(EquipmentAudience.ADULTS)
-      )
-        audiences.add(EquipmentAudience.ALL);
-      match.equipmentAudience = { $in: [...audiences] };
-    }
-    if (search.sizeList?.length) {
-      if (search.categoryList?.length !== 1)
-        throw new BadRequestException(
-          'Size filtering requires exactly one category',
-        );
-      match.equipmentSize = {
-        $in: search.sizeList.map((size) =>
-          normalizeEquipmentSize(search.categoryList![0], size),
-        ),
-      };
-    }
-    const escape = (value: string) =>
-      value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (search.equipmentBrand)
-      match.equipmentBrand = {
-        $regex: '^' + escape(search.equipmentBrand.trim()) + '$',
-        $options: 'i',
-      };
-    if (search.text?.trim())
-      match.equipmentName = {
-        $regex: escape(search.text.trim()),
-        $options: 'i',
-      };
-    if (search.equipmentPurchasable != null)
-      match.equipmentPurchasable = search.equipmentPurchasable;
-    const range = (value: { start: number; end: number }) => {
-      if (value.start > value.end)
-        throw new BadRequestException('Price range start must not exceed end');
-      return { $gte: value.start, $lte: value.end };
-    };
-    if (search.rentalPricesRange && search.rentalDurationHours == null)
-      throw new BadRequestException('Rental price filtering requires duration');
-    if (search.rentalDurationHours != null) {
-      const rate: Record<string, unknown> = {
-        durationHours: search.rentalDurationHours,
-      };
-      if (search.rentalPricesRange)
-        rate.price = range(search.rentalPricesRange);
-      match.equipmentRentalRates = { $elemMatch: rate };
-    }
-    if (search.purchasePricesRange) {
-      if (search.equipmentPurchasable === false)
-        throw new BadRequestException(
-          'Purchase price requires purchasable equipment',
-        );
-      match.equipmentPurchasable = true;
-      match.equipmentPurchasePrice = range(search.purchasePricesRange);
-    }
-    return match;
   }
 
   private async listEquipments(
@@ -504,10 +496,11 @@ export class EquipmentService {
     ) {
       throw new BadRequestException('Invalid equipment sort');
     }
+    const sort = { [sortKey]: direction, _id: direction };
     const result = await this.equipmentModel
       .aggregate<Equipments>([
         { $match: match },
-        { $sort: { [sortKey]: direction, _id: direction } },
+        { $sort: sort },
         {
           $facet: {
             list: [
@@ -524,6 +517,16 @@ export class EquipmentService {
       list: (result[0]?.list ?? []).map((item) => this.output(item)),
       metaCounter: result[0]?.metaCounter ?? [],
     };
+  }
+
+  private pickContent(
+    input: EquipmentInput | EquipmentUpdate,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const key of contentFields) {
+      if (input[key] !== undefined) result[key] = input[key];
+    }
+    return result;
   }
 
   private likeInput(memberId: MongoId, equipmentId: MongoId): LikeInput {

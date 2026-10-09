@@ -28,7 +28,7 @@ export class EquipmentResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Equipment)
-  createEquipment(
+  public createEquipment(
     @Args('input') input: EquipmentInput,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Equipment> {
@@ -37,7 +37,7 @@ export class EquipmentResolver {
 
   @UseGuards(WithoutGuard)
   @Query(() => Equipment)
-  getEquipment(
+  public getEquipment(
     @Args('equipmentId') equipmentId: string,
     @AuthMember('_id') memberId: Types.ObjectId | null,
   ): Promise<Equipment> {
@@ -49,7 +49,7 @@ export class EquipmentResolver {
 
   @UseGuards(WithoutGuard)
   @Query(() => Equipments)
-  getEquipments(
+  public getEquipments(
     @Args('input') input: EquipmentsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId | null,
   ): Promise<Equipments> {
@@ -59,7 +59,7 @@ export class EquipmentResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Equipments)
-  getAllEquipmentsByAdmin(
+  public getAllEquipmentsByAdmin(
     @Args('input') input: AllEquipmentsInquiry,
     @AuthMember('_id') adminId: Types.ObjectId,
   ): Promise<Equipments> {
@@ -69,7 +69,7 @@ export class EquipmentResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Equipment)
-  updateEquipmentByAdmin(
+  public updateEquipmentByAdmin(
     @Args('input') input: EquipmentUpdate,
     @AuthMember('_id') adminId: Types.ObjectId,
   ): Promise<Equipment> {
@@ -80,7 +80,7 @@ export class EquipmentResolver {
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Equipment)
-  removeEquipmentByAdmin(
+  public removeEquipmentByAdmin(
     @Args('equipmentId') equipmentId: string,
     @AuthMember('_id') adminId: Types.ObjectId,
   ): Promise<Equipment> {
@@ -92,7 +92,7 @@ export class EquipmentResolver {
 
   @UseGuards(AuthGuard)
   @Mutation(() => Equipment)
-  likeTargetEquipment(
+  public likeTargetEquipment(
     @Args('equipmentId') equipmentId: string,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Equipment> {
@@ -104,7 +104,7 @@ export class EquipmentResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => Equipments)
-  getFavoriteEquipments(
+  public getFavoriteEquipments(
     @Args('input') input: EquipmentHistoryInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Equipments> {
@@ -113,7 +113,7 @@ export class EquipmentResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => Equipments)
-  getVisitedEquipments(
+  public getVisitedEquipments(
     @Args('input') input: EquipmentsInquiry,
     @AuthMember('_id') memberId: Types.ObjectId,
   ): Promise<Equipments> {

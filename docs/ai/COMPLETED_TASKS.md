@@ -1,5 +1,11 @@
 # Completed tasks and validation
 
+## Google authentication cancelled: 2026-10-07
+
+At the user's request, removed the Google authentication implementation, onboarding schema/DTOs, tests, handoff and feature-only memory file. Restored the pre-feature authentication/schema/wiring, dependency lockfile, example configuration, source manifest and other migration documents. Removed only GOOGLE_CLIENT_ID from the ignored local `.env`; unrelated configuration and existing nickname/password authentication are preserved. No live database/index operations, frontend edits, deployment or commit.
+
+Fresh removal checks: API and batch no-emit typechecks and both production builds passed; existing Member regression suite passed all 24 tests. Google feature identifiers are absent from active source/configuration and rebuilt JavaScript bundles; dependency removed. Patch whitespace passed. No application startup or database connection was performed.
+
 ## Exact previous-project socket chat restored: 2026-10-07
 
 Reviewed the user's previous Nestar socket implementation and copied socket.gateway.ts and socket.module.ts byte-for-byte into SkiResort; SHA-256 equality passed for both pairs. The gateway now identifies query-token JWT members with guest fallback, broadcasts member join/leave information and messages, and sends newcomers the latest five in-memory messages. SocketModule imports the existing exported AuthService through AuthModule; existing AppModule/WsAdapter wiring remains unchanged. Added [frontend socket handoff](SOCKET_CHAT_HANDOFF.md) and focused regression coverage. No dependency, auth-service, schema, database, frontend or deployment changes.

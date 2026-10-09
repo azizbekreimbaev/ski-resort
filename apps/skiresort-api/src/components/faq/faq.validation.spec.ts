@@ -3,11 +3,8 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { model, Types } from 'mongoose';
 import FaqSchema from '../../schemas/Faq.model';
-import {
-  FaqInput,
-  FaqUpdate,
-  AllFaqsInquiry,
-} from '../../libs/dto/faq/faq.input';
+import { FaqInput, AllFaqsInquiry } from '../../libs/dto/faq/faq.input';
+import { FaqUpdate } from '../../libs/dto/faq/faq.update';
 import { FaqStatus } from '../../libs/enums/faq.enum';
 
 const FaqModel = model('FaqValidationFixture', FaqSchema);

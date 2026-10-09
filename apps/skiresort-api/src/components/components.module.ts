@@ -1,9 +1,9 @@
-import { EquipmentModule } from './equipment/equipment.module';
-import { FaqModule } from './faq/faq.module';
-import { EventModule } from './event/event.module';
 import { Module } from '@nestjs/common';
 import { MemberModule } from './member/member.module';
 import { ResortModule } from './resort/resort.module';
+import { EquipmentModule } from './equipment/equipment.module';
+import { EventModule } from './event/event.module';
+import { FaqModule } from './faq/faq.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
 import { LikeModule } from './like/like.module';
@@ -28,4 +28,4 @@ import { InstructorApplicationModule } from './instructor-application/instructor
     BoardArticleModule,
   ],
 })
-export class ComponentsModule { }
+export class ComponentsModule {}

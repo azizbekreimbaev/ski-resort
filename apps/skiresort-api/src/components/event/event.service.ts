@@ -17,9 +17,9 @@ import {
   AllEventsInquiry,
   AllEventSearch,
   EventInput,
-  EventUpdate,
   EventsInquiry,
 } from '../../libs/dto/event/event.input';
+import { EventUpdate } from '../../libs/dto/event/event.update';
 import { Member } from '../../libs/dto/member/member';
 import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 import { EventStatus } from '../../libs/enums/event.enum';
@@ -48,6 +48,128 @@ export class EventService {
     private readonly resortService: ResortService,
   ) {}
 
+  public async createEvent(
+    adminId: Types.ObjectId,
+    input: EventInput,
+  ): Promise<Event> {
+    await this.assertAdmin(adminId);
+    const values = await this.content(input);
+    this.validateDates(values.eventStartDate, values.eventEndDate);
+    const result = await this.eventModel.create({
+      ...values,
+      memberId: adminId,
+    });
+    return result.toObject();
+  }
+
+  public async getEvent(eventId: string): Promise<Event> {
+    return await this.detail(eventId, false);
+  }
+
+  public async getEvents(input: EventsInquiry): Promise<Events> {
+    return await this.list(input, false);
+  }
+
+  public async getAllEventsByAdmin(
+    adminId: Types.ObjectId,
+    input: AllEventsInquiry,
+  ): Promise<Events> {
+    await this.assertAdmin(adminId);
+    return await this.list(input, true);
+  }
+
+  public async getEventByAdmin(
+    adminId: Types.ObjectId,
+    eventId: string,
+  ): Promise<Event> {
+    await this.assertAdmin(adminId);
+    return await this.detail(eventId, true);
+  }
+
+  public async updateEventByAdmin(
+    adminId: Types.ObjectId,
+    input: EventUpdate,
+  ): Promise<Event> {
+    await this.assertAdmin(adminId);
+    const id = validateMongoObjectId(input._id);
+    const values = await this.content(input, true);
+    if (!Object.keys(values).length)
+      throw new BadRequestException('No Event fields supplied');
+    const filter: FilterQuery<Event> = { _id: id };
+    if (
+      values.eventStartDate !== undefined ||
+      values.eventEndDate !== undefined
+    ) {
+      const current = await this.eventModel.findOne(filter).lean().exec();
+      if (!current) throw new NotFoundException('Event not found');
+      this.validateDates(
+        values.eventStartDate ?? current.eventStartDate,
+        values.eventEndDate ?? current.eventEndDate,
+      );
+      filter.eventStartDate = current.eventStartDate;
+      filter.eventEndDate = current.eventEndDate;
+    }
+    const event = await this.eventModel
+      .findOneAndUpdate(
+        filter,
+        { $set: values },
+        { new: true, runValidators: true },
+      )
+      .lean()
+      .exec();
+    if (!event) {
+      if (filter.eventStartDate)
+        throw new ConflictException(
+          'Event changed or was removed; reload and retry',
+        );
+      throw new NotFoundException('Event not found');
+    }
+    return event;
+  }
+
+  public async removeEventByAdmin(
+    adminId: Types.ObjectId,
+    eventId: string,
+  ): Promise<Event> {
+    await this.assertAdmin(adminId);
+    const event = await this.eventModel
+      .findOneAndDelete({ _id: validateMongoObjectId(eventId) })
+      .lean()
+      .exec();
+    if (!event) throw new NotFoundException('Event not found');
+    return event;
+  }
+
+  public async uploadEventImages(
+    adminId: Types.ObjectId,
+    files: Promise<ImageUpload>[],
+  ): Promise<string[]> {
+    await this.assertAdmin(adminId);
+    if (!Array.isArray(files) || files.length < 1 || files.length > 5)
+      throw new BadRequestException('Supply 1–5 Event images');
+    const results = await Promise.allSettled(
+      files.map(async (file) => {
+        const image = await file;
+        if (!/^\.(png|jpg|jpeg)$/i.test(extname(image.filename)))
+          throw new BadRequestException(
+            'Event images must have a PNG/JPEG extension',
+          );
+        return saveImageUpload(image, 'events');
+      }),
+    );
+    const paths = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
+    );
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure?.status === 'rejected') {
+      await Promise.all(
+        paths.map((path) => unlink(resolve(process.cwd(), path))),
+      );
+      throw failure.reason;
+    }
+    return paths;
+  }
+
   private async assertAdmin(adminId: Types.ObjectId): Promise<void> {
     const member = await this.memberModel
       .findOne({
@@ -60,7 +182,10 @@ export class EventService {
     if (!member) throw new ForbiddenException('Active ADMIN required');
   }
 
-  private async content(input: EventInput | EventUpdate, update = false) {
+  private async content(
+    input: EventInput | EventUpdate,
+    update = false,
+  ): Promise<Partial<Event>> {
     const dto = update
       ? plainToInstance(EventUpdate, input)
       : plainToInstance(EventInput, input);
@@ -108,106 +233,14 @@ export class EventService {
       throw new BadRequestException('Event end must be after start');
   }
 
-  async createEvent(
-    adminId: Types.ObjectId,
-    input: EventInput,
-  ): Promise<Event> {
-    await this.assertAdmin(adminId);
-    const values = await this.content(input);
-    this.validateDates(values.eventStartDate, values.eventEndDate);
-    return (
-      await this.eventModel.create({ ...values, memberId: adminId })
-    ).toObject();
-  }
-
-  async updateEventByAdmin(
-    adminId: Types.ObjectId,
-    input: EventUpdate,
-  ): Promise<Event> {
-    await this.assertAdmin(adminId);
-    const id = validateMongoObjectId(input._id);
-    const values = await this.content(input, true);
-    if (!Object.keys(values).length)
-      throw new BadRequestException('No Event fields supplied');
-    const filter: FilterQuery<Event> = { _id: id };
-    if (
-      values.eventStartDate !== undefined ||
-      values.eventEndDate !== undefined
-    ) {
-      const current = await this.eventModel.findOne(filter).lean().exec();
-      if (!current) throw new NotFoundException('Event not found');
-      this.validateDates(
-        values.eventStartDate ?? current.eventStartDate,
-        values.eventEndDate ?? current.eventEndDate,
-      );
-      filter.eventStartDate = current.eventStartDate;
-      filter.eventEndDate = current.eventEndDate;
-    }
-    const event = await this.eventModel
-      .findOneAndUpdate(
-        filter,
-        { $set: values },
-        { new: true, runValidators: true },
-      )
-      .lean()
-      .exec();
-    if (!event) {
-      if (filter.eventStartDate)
-        throw new ConflictException(
-          'Event changed or was removed; reload and retry',
-        );
-      throw new NotFoundException('Event not found');
-    }
-    return event;
-  }
-
-  async removeEventByAdmin(
-    adminId: Types.ObjectId,
-    eventId: string,
-  ): Promise<Event> {
-    await this.assertAdmin(adminId);
-    const event = await this.eventModel
-      .findOneAndDelete({ _id: validateMongoObjectId(eventId) })
-      .lean()
-      .exec();
-    if (!event) throw new NotFoundException('Event not found');
-    return event;
-  }
-
-  async getEvent(eventId: string): Promise<Event> {
-    return this.detail(eventId, false);
-  }
-
-  async getEventByAdmin(
-    adminId: Types.ObjectId,
-    eventId: string,
-  ): Promise<Event> {
-    await this.assertAdmin(adminId);
-    return this.detail(eventId, true);
-  }
-
   private async detail(eventId: string, admin: boolean): Promise<Event> {
-    const event = await this.eventModel
-      .findOne({
-        _id: validateMongoObjectId(eventId),
-        ...(admin ? {} : { eventStatus: EventStatus.PUBLISHED }),
-      })
-      .lean()
-      .exec();
+    const search: FilterQuery<Event> = {
+      _id: validateMongoObjectId(eventId),
+      ...(admin ? {} : { eventStatus: EventStatus.PUBLISHED }),
+    };
+    const event = await this.eventModel.findOne(search).lean().exec();
     if (!event) throw new NotFoundException('Event not found');
     return event;
-  }
-
-  async getEvents(input: EventsInquiry): Promise<Events> {
-    return this.list(input, false);
-  }
-
-  async getAllEventsByAdmin(
-    adminId: Types.ObjectId,
-    input: AllEventsInquiry,
-  ): Promise<Events> {
-    await this.assertAdmin(adminId);
-    return this.list(input, true);
   }
 
   private async list(
@@ -219,23 +252,24 @@ export class EventService {
       : plainToInstance(EventsInquiry, input);
     if (validateSync(dto).length)
       throw new BadRequestException('Invalid Event inquiry');
-    const filter: FilterQuery<Event> = {};
-    if (!admin) filter.eventStatus = EventStatus.PUBLISHED;
+    const match: FilterQuery<Event> = {};
+    if (!admin) match.eventStatus = EventStatus.PUBLISHED;
     else if (dto.search instanceof AllEventSearch && dto.search.eventStatus)
-      filter.eventStatus = dto.search.eventStatus;
+      match.eventStatus = dto.search.eventStatus;
     if (dto.search?.resortId)
-      filter.resortId = validateMongoObjectId(dto.search.resortId);
+      match.resortId = validateMongoObjectId(dto.search.resortId);
     if (dto.search?.text) {
       const text = dto.search.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.$or = ['eventTitle', 'eventDesc'].map((field) => ({
+      match.$or = ['eventTitle', 'eventDesc'].map((field) => ({
         [field]: { $regex: text, $options: 'i' },
       }));
     }
     const direction = dto.direction ?? Direction.DESC;
+    const sort = { [dto.sort ?? 'createdAt']: direction, _id: direction };
     const [result] = await this.eventModel
       .aggregate<Events>([
-        { $match: filter },
-        { $sort: { [dto.sort ?? 'createdAt']: direction, _id: direction } },
+        { $match: match },
+        { $sort: sort },
         {
           $facet: {
             list: [
@@ -248,35 +282,5 @@ export class EventService {
       ])
       .exec();
     return result ?? { list: [], metaCounter: [] };
-  }
-
-  async uploadEventImages(
-    adminId: Types.ObjectId,
-    files: Promise<ImageUpload>[],
-  ): Promise<string[]> {
-    await this.assertAdmin(adminId);
-    if (!Array.isArray(files) || files.length < 1 || files.length > 5)
-      throw new BadRequestException('Supply 1–5 Event images');
-    const results = await Promise.allSettled(
-      files.map(async (file) => {
-        const image = await file;
-        if (!/^\.(png|jpg|jpeg)$/i.test(extname(image.filename)))
-          throw new BadRequestException(
-            'Event images must have a PNG/JPEG extension',
-          );
-        return saveImageUpload(image, 'events');
-      }),
-    );
-    const paths = results.flatMap((result) =>
-      result.status === 'fulfilled' ? [result.value] : [],
-    );
-    const failure = results.find((result) => result.status === 'rejected');
-    if (failure?.status === 'rejected') {
-      await Promise.all(
-        paths.map((path) => unlink(resolve(process.cwd(), path))),
-      );
-      throw failure.reason;
-    }
-    return paths;
   }
 }

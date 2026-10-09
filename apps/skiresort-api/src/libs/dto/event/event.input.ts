@@ -1,4 +1,4 @@
-import { Field, InputType, Int, PartialType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -44,8 +44,12 @@ export class EventInput {
   @IsString({ each: true })
   @Field(() => [String])
   eventImages!: string[];
-  @IsDate() @Field(() => Date) eventStartDate!: Date;
-  @IsDate() @Field(() => Date) eventEndDate!: Date;
+  @IsDate()
+  @Field(() => Date)
+  eventStartDate!: Date;
+  @IsDate()
+  @Field(() => Date)
+  eventEndDate!: Date;
   @ValidateIf((_object, value) => value !== undefined)
   @IsEnum(EventStatus)
   @Field(() => EventStatus, { nullable: true, defaultValue: EventStatus.DRAFT })
@@ -60,18 +64,6 @@ export class EventInput {
   @IsMongoId()
   @Field(() => String, { nullable: true })
   resortId?: string | null;
-}
-
-@InputType()
-export class EventUpdate extends PartialType(EventInput, {
-  skipNullProperties: false,
-}) {
-  @IsMongoId() @Field(() => String) _id!: string;
-  // Override the creation default: omission must not unpublish an Event.
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsEnum(EventStatus)
-  @Field(() => EventStatus, { nullable: true })
-  eventStatus?: EventStatus;
 }
 
 @InputType()
@@ -96,8 +88,15 @@ export class AllEventSearch extends EventSearch {
 
 @InputType({ isAbstract: true })
 class EventPagination {
-  @IsInt() @Min(1) @Field(() => Int) page!: number;
-  @IsInt() @Min(1) @Max(100) @Field(() => Int) limit!: number;
+  @IsInt()
+  @Min(1)
+  @Field(() => Int)
+  page!: number;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Field(() => Int)
+  limit!: number;
   @IsOptional()
   @IsIn(['createdAt', 'updatedAt', 'eventStartDate'])
   @Field(() => String, { nullable: true })

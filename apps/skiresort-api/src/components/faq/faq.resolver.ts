@@ -5,9 +5,9 @@ import { Faq, Faqs } from '../../libs/dto/faq/faq';
 import {
   AllFaqsInquiry,
   FaqInput,
-  FaqUpdate,
   FaqsInquiry,
 } from '../../libs/dto/faq/faq.input';
+import { FaqUpdate } from '../../libs/dto/faq/faq.update';
 import { MemberType } from '../../libs/enums/member.enum';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,62 +19,62 @@ export class FaqResolver {
   constructor(private readonly faqService: FaqService) {}
 
   @Query(() => Faq)
-  getFaq(@Args('faqId') faqId: string) {
-    return this.faqService.getFaq(faqId);
+  public async getFaq(@Args('faqId') faqId: string): Promise<Faq> {
+    return await this.faqService.getFaq(faqId);
   }
 
   @Query(() => Faqs)
-  getFaqs(@Args('input') input: FaqsInquiry) {
-    return this.faqService.getFaqs(input);
+  public async getFaqs(@Args('input') input: FaqsInquiry): Promise<Faqs> {
+    return await this.faqService.getFaqs(input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Faq)
-  createFaq(
+  public async createFaq(
     @Args('input') input: FaqInput,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.faqService.createFaq(adminId, input);
+  ): Promise<Faq> {
+    return await this.faqService.createFaq(adminId, input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Faq)
-  updateFaqByAdmin(
+  public async updateFaqByAdmin(
     @Args('input') input: FaqUpdate,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.faqService.updateFaqByAdmin(adminId, input);
+  ): Promise<Faq> {
+    return await this.faqService.updateFaqByAdmin(adminId, input);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Mutation(() => Faq)
-  removeFaqByAdmin(
+  public async removeFaqByAdmin(
     @Args('faqId') faqId: string,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.faqService.removeFaqByAdmin(adminId, faqId);
+  ): Promise<Faq> {
+    return await this.faqService.removeFaqByAdmin(adminId, faqId);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Faq)
-  getFaqByAdmin(
+  public async getFaqByAdmin(
     @Args('faqId') faqId: string,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.faqService.getFaqByAdmin(adminId, faqId);
+  ): Promise<Faq> {
+    return await this.faqService.getFaqByAdmin(adminId, faqId);
   }
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
   @Query(() => Faqs)
-  getAllFaqsByAdmin(
+  public async getAllFaqsByAdmin(
     @Args('input') input: AllFaqsInquiry,
     @AuthMember('_id') adminId: Types.ObjectId,
-  ) {
-    return this.faqService.getAllFaqsByAdmin(adminId, input);
+  ): Promise<Faqs> {
+    return await this.faqService.getAllFaqsByAdmin(adminId, input);
   }
 }

@@ -3,7 +3,8 @@ import { Model, Types } from 'mongoose';
 import { FaqService } from './faq.service';
 import { Faq } from '../../libs/dto/faq/faq';
 import { Member } from '../../libs/dto/member/member';
-import { FaqInput, FaqUpdate } from '../../libs/dto/faq/faq.input';
+import { FaqInput } from '../../libs/dto/faq/faq.input';
+import { FaqUpdate } from '../../libs/dto/faq/faq.update';
 import { FaqStatus } from '../../libs/enums/faq.enum';
 import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 

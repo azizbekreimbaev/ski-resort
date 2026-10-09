@@ -122,7 +122,7 @@ export class InstructorApplicationService {
     memberId: MongoId,
   ): Promise<InstructorApplication | null> {
     await this.assertActiveRole(memberId);
-    return this.applicationModel
+    return await this.applicationModel
       .findOne({ memberId })
       .sort({ createdAt: -1, _id: -1 })
       .lean<InstructorApplication>()
@@ -134,7 +134,7 @@ export class InstructorApplicationService {
     input: InstructorApplicationsInquiry,
   ): Promise<InstructorApplications> {
     await this.assertActiveRole(adminId, MemberType.ADMIN);
-    const sort = input.sort ?? 'createdAt';
+    const sortKey = input.sort ?? 'createdAt';
     const direction = input.direction ?? Direction.DESC;
     if (
       !Number.isInteger(input.page) ||
@@ -142,7 +142,7 @@ export class InstructorApplicationService {
       !Number.isInteger(input.limit) ||
       input.limit < 1 ||
       input.limit > 100 ||
-      !availableInstructorApplicationSorts.includes(sort) ||
+      !availableInstructorApplicationSorts.includes(sortKey) ||
       ![Direction.ASC, Direction.DESC].includes(direction)
     ) {
       throw new BadRequestException(
@@ -161,10 +161,11 @@ export class InstructorApplicationService {
     }
     if (input.search?.memberId)
       match.memberId = validateMongoObjectId(input.search.memberId);
+    const sort = { [sortKey]: direction, _id: direction };
     const result = await this.applicationModel
       .aggregate<InstructorApplications>([
         { $match: match },
-        { $sort: { [sort]: direction, _id: direction } },
+        { $sort: sort },
         {
           $facet: {
             list: [
@@ -197,7 +198,7 @@ export class InstructorApplicationService {
     adminId: MongoId,
     applicationId: MongoId,
   ): Promise<InstructorApplication> {
-    return this.connection.transaction(async (session) => {
+    return await this.connection.transaction(async (session) => {
       await this.assertActiveRole(adminId, MemberType.ADMIN, session);
       const application = await this.pendingApplication(applicationId, session);
       if (application.instructorResortId)
@@ -243,7 +244,7 @@ export class InstructorApplicationService {
       !input.rejectionReason.trim()
     )
       throw new BadRequestException('Rejection reason is required');
-    return this.connection.transaction(async (session) => {
+    return await this.connection.transaction(async (session) => {
       await this.assertActiveRole(adminId, MemberType.ADMIN, session);
       await this.pendingApplication(applicationId, session);
       const rejected = await this.applicationModel

@@ -1,27 +1,26 @@
 import { Controller, Get, Logger } from '@nestjs/common';
-import { BatchService } from './batch.service';
 import { Cron, Timeout } from '@nestjs/schedule';
+import { BatchService } from './batch.service';
 import { BATCH_ROLLBACK, BATCH_TOP_INSTRUCTORS } from './lib/config';
 
 @Controller()
 export class BatchController {
-  private logger: Logger = new Logger("BatchController")
-  constructor(private readonly batchService: BatchService) { }
+  private logger: Logger = new Logger('BatchController');
+  constructor(private readonly batchService: BatchService) {}
 
   @Timeout(1000)
   handleTimeout() {
-    this.logger.debug(`BATCH seerver READY`)
+    this.logger.debug(`BATCH seerver READY`);
   }
 
-  @Cron("00 00 01 * * *", { name: BATCH_ROLLBACK })
+  @Cron('00 00 01 * * *', { name: BATCH_ROLLBACK })
   public async batchRollback() {
     try {
-      this.logger["context"] = BATCH_ROLLBACK;
-      this.logger.debug(`EXECUTED`)
-      await this.batchService.batchRollback()
-
+      this.logger['context'] = BATCH_ROLLBACK;
+      this.logger.debug(`EXECUTED`);
+      await this.batchService.batchRollback();
     } catch (err) {
-      this.logger.error(err)
+      this.logger.error(err);
     }
   }
 
@@ -29,10 +28,10 @@ export class BatchController {
   public async batchTopInstructors() {
     try {
       this.logger['context'] = BATCH_TOP_INSTRUCTORS;
-      this.logger.debug(`EXECUTED`)
+      this.logger.debug(`EXECUTED`);
       await this.batchService.batchTopInstructors();
     } catch (err) {
-      this.logger.error(err)
+      this.logger.error(err);
     }
   }
 
@@ -40,7 +39,6 @@ export class BatchController {
   // handleInterval() {
   //   this.logger.debug(`Internal TEST`)
   // }
-
 
   @Get()
   getHello(): string {

@@ -13,7 +13,6 @@ import {
   availableResortSorts,
   ResortHistoryInquiry,
   ResortInput,
-  ResortSearch,
   ResortsInquiry,
 } from '../../libs/dto/resort/resort.input';
 import { Resort, Resorts } from '../../libs/dto/resort/resort';
@@ -72,7 +71,7 @@ export class ResortService {
     @InjectModel('Resort') private readonly resortModel: Model<Resort>,
     private readonly likeService: LikeService,
     private readonly viewService: ViewService,
-  ) { }
+  ) {}
 
   public async createResort(
     memberId: MongoId,
@@ -107,15 +106,6 @@ export class ResortService {
       if (this.isDuplicateKeyError(error)) throw this.duplicateResortError();
       throw error;
     }
-  }
-
-  public async assertVisibleResort(resortId: MongoId): Promise<Resort> {
-    const resort = await this.resortModel
-      .findOne({ _id: resortId, resortStatus: { $in: visibleStatuses } })
-      .lean<Resort>()
-      .exec();
-    if (!resort) throw new NotFoundException('Resort not found');
-    return resort;
   }
 
   public async getResort(
@@ -157,18 +147,112 @@ export class ResortService {
     return resort;
   }
 
+  public async resortStatsEditor(input: {
+    _id: MongoId;
+    targetKey: ResortCounter;
+    modifier: number;
+  }): Promise<Resort> {
+    const { _id, targetKey, modifier } = input;
+    if (
+      !['resortViews', 'resortLikes', 'resortComments'].includes(targetKey) ||
+      !Number.isInteger(modifier) ||
+      ![-1, 1].includes(modifier)
+    ) {
+      throw new BadRequestException('Invalid resort counter change');
+    }
+    const match: Record<string, unknown> = { _id };
+    if (modifier > 0) match.resortStatus = { $in: visibleStatuses };
+    // Deleted resort records still receive decrements when comments are removed.
+    if (modifier < 0) match[targetKey] = { $gte: -modifier };
+    const resort = await this.resortModel
+      .findOneAndUpdate(
+        match,
+        { $inc: { [targetKey]: modifier } },
+        { new: true },
+      )
+      .lean<Resort>()
+      .exec();
+    if (!resort)
+      throw new ConflictException('Resort counter could not be updated');
+    return resort;
+  }
+
   public getResorts(
     memberId: MongoId | null,
     input: ResortsInquiry,
   ): Promise<Resorts> {
-    return this.listResorts(memberId, input, {
+    const match: Record<string, unknown> = {
       resortStatus: { $in: visibleStatuses },
-      ...this.searchMatch(input.search),
-    });
+    };
+    this.shapeMatchQuery(match, input);
+    return this.listResorts(memberId, input, match);
+  }
+
+  private shapeMatchQuery(
+    match: Record<string, unknown>,
+    input: ResortsInquiry | AllResortsInquiry,
+  ): void {
+    const { search } = input;
+    if (!search) return;
+    if (search.memberId)
+      match.memberId = validateMongoObjectId(search.memberId);
+    if (search.locationList?.length)
+      match.resortLocation = { $in: search.locationList };
+    if (search.levelList?.length) match.resortLevel = { $in: search.levelList };
+    if (search.facilities?.length)
+      match.resortFacilities = { $all: search.facilities };
+    if (search.pricesRange) {
+      const { start, end } = search.pricesRange;
+      if (start > end)
+        throw new BadRequestException('Price range start must not exceed end');
+      match.resortPricePerDay = { $gte: start, $lte: end };
+    }
+    if (search.text) {
+      const escaped = search.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      match.resortTitle = { $regex: escaped, $options: 'i' };
+    }
+  }
+
+  public getFavoriteResorts(
+    memberId: MongoId,
+    input: ResortHistoryInquiry,
+  ): Promise<Resorts> {
+    return this.likeService.getFavoriteResorts(memberId, input);
+  }
+
+  public getVisitedResorts(
+    memberId: MongoId,
+    input: ResortHistoryInquiry,
+  ): Promise<Resorts> {
+    return this.viewService.getVisitedResorts(memberId, input);
+  }
+
+  public async likeTargetResort(
+    memberId: MongoId,
+    resortId: MongoId,
+  ): Promise<Resort> {
+    let resort = await this.assertVisibleResort(resortId);
+    const input = this.likeInput(memberId, resortId);
+    const change = await this.likeService.toggleLikeWithChange(input);
+    if (change.modifier !== 0) {
+      try {
+        resort = await this.resortStatsEditor({
+          _id: resortId,
+          targetKey: 'resortLikes',
+          modifier: change.modifier,
+        });
+      } catch (error) {
+        await this.compensate(change.undo, 'like');
+        throw error;
+      }
+    }
+    resort.meLiked = await this.likeService.checkLikeExistence(input);
+    return resort;
   }
 
   public getAllResortsByAdmin(input: AllResortsInquiry): Promise<Resorts> {
-    const match = this.searchMatch(input.search);
+    const match: Record<string, unknown> = {};
+    this.shapeMatchQuery(match, input);
     if (input.search?.resortStatus)
       match.resortStatus = input.search.resortStatus;
     return this.listResorts(null, input, match);
@@ -204,71 +288,56 @@ export class ResortService {
     return resort;
   }
 
-  public async likeTargetResort(
-    memberId: MongoId,
-    resortId: MongoId,
-  ): Promise<Resort> {
-    let resort = await this.assertVisibleResort(resortId);
-    const input = this.likeInput(memberId, resortId);
-    const change = await this.likeService.toggleLikeWithChange(input);
-    if (change.modifier !== 0) {
-      try {
-        resort = await this.resortStatsEditor({
-          _id: resortId,
-          targetKey: 'resortLikes',
-          modifier: change.modifier,
-        });
-      } catch (error) {
-        await this.compensate(change.undo, 'like');
-        throw error;
-      }
-    }
-    resort.meLiked = await this.likeService.checkLikeExistence(input);
-    return resort;
-  }
-
-  public getFavoriteResorts(
-    memberId: MongoId,
-    input: ResortHistoryInquiry,
-  ): Promise<Resorts> {
-    return this.likeService.getFavoriteResorts(memberId, input);
-  }
-
-  public getVisitedResorts(
-    memberId: MongoId,
-    input: ResortHistoryInquiry,
-  ): Promise<Resorts> {
-    return this.viewService.getVisitedResorts(memberId, input);
-  }
-
-  public async resortStatsEditor(input: {
-    _id: MongoId;
-    targetKey: ResortCounter;
-    modifier: number;
-  }): Promise<Resort> {
-    const { _id, targetKey, modifier } = input;
-    if (
-      !['resortViews', 'resortLikes', 'resortComments'].includes(targetKey) ||
-      !Number.isInteger(modifier) ||
-      ![-1, 1].includes(modifier)
-    ) {
-      throw new BadRequestException('Invalid resort counter change');
-    }
-    const match: Record<string, unknown> = { _id };
-    if (modifier > 0) match.resortStatus = { $in: visibleStatuses };
-    // Deleted resort records still receive decrements when comments are removed.
-    if (modifier < 0) match[targetKey] = { $gte: -modifier };
+  public async assertVisibleResort(resortId: MongoId): Promise<Resort> {
     const resort = await this.resortModel
-      .findOneAndUpdate(
-        match,
-        { $inc: { [targetKey]: modifier } },
-        { new: true },
-      )
+      .findOne({ _id: resortId, resortStatus: { $in: visibleStatuses } })
       .lean<Resort>()
       .exec();
-    if (!resort)
-      throw new ConflictException('Resort counter could not be updated');
+    if (!resort) throw new NotFoundException('Resort not found');
     return resort;
+  }
+
+  private async listResorts(
+    memberId: MongoId | null,
+    input: ResortsInquiry | AllResortsInquiry,
+    match: Record<string, unknown>,
+  ): Promise<Resorts> {
+    if (
+      !Number.isInteger(input.page) ||
+      input.page < 1 ||
+      !Number.isInteger(input.limit) ||
+      input.limit < 1 ||
+      input.limit > 100
+    ) {
+      throw new BadRequestException('Invalid resort pagination');
+    }
+    const sortKey = input.sort ?? 'createdAt';
+    const direction = input.direction ?? Direction.DESC;
+    if (
+      !availableResortSorts.includes(sortKey) ||
+      ![Direction.ASC, Direction.DESC].includes(direction)
+    ) {
+      throw new BadRequestException('Invalid resort sort');
+    }
+    const sort = { [sortKey]: direction, _id: direction };
+    const result = await this.resortModel
+      .aggregate<Resorts>([
+        { $match: match },
+        { $sort: sort },
+        {
+          $facet: {
+            list: [
+              { $skip: (input.page - 1) * input.limit },
+              { $limit: input.limit },
+              ...ownerStages,
+              lookupAuthMemberLiked(memberId, '$_id', LikeGroup.RESORT),
+            ],
+            metaCounter: [{ $count: 'total' }],
+          },
+        },
+      ])
+      .exec();
+    return result[0] ?? { list: [], metaCounter: [] };
   }
 
   private pickContent(
@@ -294,71 +363,6 @@ export class ResortService {
     return new ConflictException(
       'A resort with this title, location, address and level already exists',
     );
-  }
-
-  private searchMatch(search?: ResortSearch | null): Record<string, unknown> {
-    const match: Record<string, unknown> = {};
-    if (!search) return match;
-    if (search.memberId)
-      match.memberId = validateMongoObjectId(search.memberId);
-    if (search.locationList?.length)
-      match.resortLocation = { $in: search.locationList };
-    if (search.levelList?.length) match.resortLevel = { $in: search.levelList };
-    if (search.facilities?.length)
-      match.resortFacilities = { $all: search.facilities };
-    if (search.pricesRange) {
-      const { start, end } = search.pricesRange;
-      if (start > end)
-        throw new BadRequestException('Price range start must not exceed end');
-      match.resortPricePerDay = { $gte: start, $lte: end };
-    }
-    if (search.text) {
-      const escaped = search.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      match.resortTitle = { $regex: escaped, $options: 'i' };
-    }
-    return match;
-  }
-
-  private async listResorts(
-    memberId: MongoId | null,
-    input: ResortsInquiry | AllResortsInquiry,
-    match: Record<string, unknown>,
-  ): Promise<Resorts> {
-    if (
-      !Number.isInteger(input.page) ||
-      input.page < 1 ||
-      !Number.isInteger(input.limit) ||
-      input.limit < 1 ||
-      input.limit > 100
-    ) {
-      throw new BadRequestException('Invalid resort pagination');
-    }
-    const sortKey = input.sort ?? 'createdAt';
-    const direction = input.direction ?? Direction.DESC;
-    if (
-      !availableResortSorts.includes(sortKey) ||
-      ![Direction.ASC, Direction.DESC].includes(direction)
-    ) {
-      throw new BadRequestException('Invalid resort sort');
-    }
-    const result = await this.resortModel
-      .aggregate<Resorts>([
-        { $match: match },
-        { $sort: { [sortKey]: direction, _id: direction } },
-        {
-          $facet: {
-            list: [
-              { $skip: (input.page - 1) * input.limit },
-              { $limit: input.limit },
-              ...ownerStages,
-              lookupAuthMemberLiked(memberId, '$_id', LikeGroup.RESORT),
-            ],
-            metaCounter: [{ $count: 'total' }],
-          },
-        },
-      ])
-      .exec();
-    return result[0] ?? { list: [], metaCounter: [] };
   }
 
   private likeInput(memberId: MongoId, resortId: MongoId): LikeInput {
