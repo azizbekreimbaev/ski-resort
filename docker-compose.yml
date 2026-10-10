@@ -19,7 +19,12 @@ services:
       - monorepo-network
 
     # FOR PRODUCTION
-    command: bash -c "npm install && npm run build:api && npm run start:prod"
+    command: >-
+      bash -c "set -e;
+      npm install;
+      npm run build:api;
+      test -f dist/apps/skiresort-api/main.js;
+      npm run start:prod"
 
   skiresort-batch:
     container_name: skiresort-batch
@@ -39,7 +44,12 @@ services:
       - monorepo-network
 
     # FOR PRODUCTION
-    command: bash -c "npm install && npm run build:batch && npm run start:prod:batch"
+    command: >-
+      bash -c "set -e;
+      npm install;
+      npm run build:batch;
+      test -f dist/apps/skiresort-batch/main.js;
+      npm run start:prod:batch"
 
 networks:
   monorepo-network:
