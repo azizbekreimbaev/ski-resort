@@ -9,6 +9,8 @@ services:
       - 4001:3000
     volumes:
       - ./:/usr/src/skiresort
+      - skiresort-api-node-modules:/usr/src/skiresort/node_modules
+      - skiresort-api-dist:/usr/src/skiresort/dist
     working_dir: /usr/src/skiresort
     environment:
       PORT_API: 3000
@@ -17,7 +19,7 @@ services:
       - monorepo-network
 
     # FOR PRODUCTION
-    command: bash -c "rm -rf dist && npm install && npm run build && npm run start:prod"
+    command: bash -c "npm install && npm run build:api && npm run start:prod"
 
   skiresort-batch:
     container_name: skiresort-batch
@@ -27,6 +29,8 @@ services:
       - 4002:3001
     volumes:
       - ./:/usr/src/skiresort
+      - skiresort-batch-node-modules:/usr/src/skiresort/node_modules
+      - skiresort-batch-dist:/usr/src/skiresort/dist
     working_dir: /usr/src/skiresort
     environment:
       PORT_BATCH: 3001
@@ -35,8 +39,14 @@ services:
       - monorepo-network
 
     # FOR PRODUCTION
-    command: bash -c "rm -rf dist && npm install && npm run build && npm run start:prod:batch"
+    command: bash -c "npm install && npm run build:batch && npm run start:prod:batch"
 
 networks:
   monorepo-network:
     driver: bridge
+
+volumes:
+  skiresort-api-node-modules:
+  skiresort-api-dist:
+  skiresort-batch-node-modules:
+  skiresort-batch-dist:

@@ -6,7 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build skiresort-api && nest build skiresort-batch",
+    "build": "npm run build:api && npm run build:batch",
+    "build:api": "nest build skiresort",
+    "build:batch": "nest build skiresort-batch",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
