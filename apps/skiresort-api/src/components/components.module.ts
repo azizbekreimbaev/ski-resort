@@ -11,6 +11,7 @@ import { ViewModule } from './view/view.module';
 import { FollowModule } from './follow/follow.module';
 import { BoardArticleModule } from './board-article/board-article.module';
 import { InstructorApplicationModule } from './instructor-application/instructor-application.module';
+import { AssistantModule } from './assistant/assistant.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { InstructorApplicationModule } from './instructor-application/instructor
     ViewModule,
     FollowModule,
     BoardArticleModule,
+    AssistantModule,
   ],
 })
 export class ComponentsModule {}

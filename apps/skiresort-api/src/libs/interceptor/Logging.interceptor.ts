@@ -8,6 +8,8 @@ import {
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { visit } from 'graphql';
+import type { GraphQLResolveInfo } from 'graphql';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -25,6 +27,37 @@ export class LoggingInterceptor implements NestInterceptor {
       /**Print Request */
 
       const gqlContext = GqlExecutionContext.create(context);
+
+      const info = gqlContext.getInfo<GraphQLResolveInfo>();
+      let assistantOperation = info.fieldName === 'askAssistant';
+      for (const node of [
+        info.operation,
+        ...Object.values(info.fragments ?? {}),
+      ]) {
+        if (node)
+          visit(node, {
+            Field: (field) => {
+              if (field.name.value === 'askAssistant')
+                assistantOperation = true;
+            },
+          });
+      }
+      if (assistantOperation) {
+        return next.handle().pipe(
+          tap({
+            next: () =>
+              this.logger.log(
+                `${info.fieldName} success ${Date.now() - recordTime}ms`,
+                'ASSISTANT',
+              ),
+            error: () =>
+              this.logger.log(
+                `${info.fieldName} error ${Date.now() - recordTime}ms`,
+                'ASSISTANT',
+              ),
+          }),
+        );
+      }
 
       this.logger.log(
         `${this.stringify(gqlContext.getContext().req.body)}`,
