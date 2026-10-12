@@ -4,157 +4,179 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'ws';
-import * as WebSocket from 'ws';
-import * as url from 'url';
-import { link } from 'fs';
+import { randomUUID } from 'crypto';
+import { IncomingMessage } from 'http';
+import { Types } from 'mongoose';
+import WebSocket, { Server } from 'ws';
 import { AuthService } from '../components/auth/auth.service';
-import { Member } from '../libs/dto/member/member';
-
-interface MessagePayload {
-  event: string;
-  text: string;
-  memberData: Member | null;
-}
+import { ChatHistoryService } from './chat-history.service';
+import { ChatMember, ChatMessage } from './chat-message';
 
 interface InfoPayload {
-  event: string;
+  event: 'info';
   totalClients: number;
-  memberData: Member | null;
-  action: string;
+  memberData: ChatMember | null;
+  action: 'joined' | 'left';
 }
 
 @WebSocketGateway({ transports: ['websocket'], secure: false })
 export class SocketGateway {
-  private logger: Logger = new Logger('SocketEventGateway');
-  private summaryClient: number = 0;
+  private readonly logger = new Logger('SocketEventGateway');
+  // Only clients whose history has been delivered participate in live chat.
+  private readonly clientsAuthMap = new Map<WebSocket, ChatMember | null>();
+  private operations: Promise<void> = Promise.resolve();
 
-  private clientsAuthMap = new Map<WebSocket, Member | null>();
-  private messagesList: MessagePayload[] = [];
-
-  constructor(private authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly historyService: ChatHistoryService,
+  ) {}
 
   @WebSocketServer()
   server!: Server;
 
-  public afterInit(server: Server) {
-    this.logger.verbose(
-      `WevSocket Server Initialized && total: [${this.summaryClient}]`,
-    );
+  public afterInit(): void {
+    this.logger.verbose('WebSocket server initialized');
   }
 
-  private async retrieveAuth(req: any): Promise<Member | null> {
+  private async retrieveAuth(req: IncomingMessage): Promise<ChatMember | null> {
     try {
-      const parseUrl = url.parse(req.url, true);
-      const { token } = parseUrl.query;
-      // console.log("token", token)
-
-      return await this.authService.verifyAuth(token as string);
-    } catch (err) {
+      const token = new URL(
+        req.url ?? '/',
+        'http://localhost',
+      ).searchParams.get('token');
+      if (!token) return null;
+      const member = await this.authService.verifyAuth(token);
+      const memberId: unknown = member._id;
+      if (
+        !(memberId instanceof Types.ObjectId) &&
+        typeof memberId !== 'string'
+      ) {
+        return null;
+      }
+      // Never broadcast or persist contact fields, passwords, or token claims.
+      return {
+        _id: typeof memberId === 'string' ? memberId : memberId.toHexString(),
+        memberNick: member.memberNick,
+        memberImage: member.memberImage ?? '',
+      };
+    } catch {
+      // Missing or invalid tokens retain the existing guest access behavior.
       return null;
     }
   }
 
-  public async handleConnection(client: WebSocket, req: any[]) {
-    const authMember = await this.retrieveAuth(req);
-    console.log('authMember', authMember);
-
-    //key object boladi ==? Map complex data type uchun
-    this.clientsAuthMap.set(client, authMember);
-    const clientNick: string = authMember?.memberNick ?? 'Guest';
-
-    this.summaryClient++;
-
-    this.logger.verbose(
-      `Connection [${clientNick}]&& total: [${this.summaryClient}]`,
-    );
-
-    const infoMsg: InfoPayload = {
-      event: 'info',
-      totalClients: this.summaryClient,
-      memberData: authMember,
-      action: 'joined',
-    };
-
-    this.emitMessage(infoMsg);
-
-    //CLIENT Messags
-
-    client.send(
-      JSON.stringify({ event: 'getMessages', list: this.messagesList }),
-    );
+  private enqueue(operation: () => Promise<void>): Promise<void> {
+    // History snapshot and activation cannot interleave with save/broadcast.
+    const result = this.operations.then(operation);
+    // A failed operation must not block subsequent connections or messages.
+    this.operations = result.catch(() => undefined);
+    return result;
   }
 
-  public async handleDisconnect(client: WebSocket) {
-    const authMember = this.clientsAuthMap.get(client);
+  public async handleConnection(
+    client: WebSocket,
+    req: IncomingMessage,
+  ): Promise<void> {
+    const member = await this.retrieveAuth(req);
+    await this.enqueue(async () => {
+      if (client.readyState !== WebSocket.OPEN) return;
+      let list: ChatMessage[];
+      try {
+        list = await this.historyService.getMessages();
+      } catch {
+        this.logger.warn('Chat history unavailable');
+        this.sendError(
+          client,
+          'HISTORY_UNAVAILABLE',
+          'Chat history is unavailable. Please reconnect.',
+        );
+        client.close(1013, 'Chat history unavailable');
+        return;
+      }
+      // Redis may respond after the visitor has already disconnected.
+      if (client.readyState !== WebSocket.OPEN) return;
+      this.clientsAuthMap.set(client, member);
+      this.emitMessage({
+        event: 'info',
+        totalClients: this.clientsAuthMap.size,
+        memberData: member,
+        action: 'joined',
+      });
+      client.send(JSON.stringify({ event: 'getMessages', list }));
+    });
+  }
 
+  public handleDisconnect(client: WebSocket): void {
+    // Failed or still-loading connections were never counted as joined.
+    if (!this.clientsAuthMap.has(client)) return;
+    const member = this.clientsAuthMap.get(client) ?? null;
     this.clientsAuthMap.delete(client);
-
-    const clientNick: string = authMember?.memberNick ?? 'Guest';
-
-    this.summaryClient--;
-    this.logger.verbose(
-      `DisConnection [${clientNick}] && total: [${this.summaryClient}]`,
-    );
-
-    const infoMsg: InfoPayload = {
+    this.emitMessage({
       event: 'info',
-      totalClients: this.summaryClient,
-      memberData: authMember ?? null,
+      totalClients: this.clientsAuthMap.size,
+      memberData: member,
       action: 'left',
-    };
-
-    //client chiqib ketgan user boladi
-
-    this.broadcastMessage(client, infoMsg);
+    });
   }
 
   @SubscribeMessage('message')
-  public async handleMessage(client: any, payload: string): Promise<void> {
-    const authMember = this.clientsAuthMap.get(client);
-
-    const newMessage: MessagePayload = {
-      event: 'message',
-      text: payload,
-      memberData: authMember ?? null,
-    };
-
-    const clientNick: string = authMember?.memberNick ?? 'Guest';
-
-    this.logger.verbose(`NEW MESSAGE [${clientNick}]: ${payload}`);
-
-    //yango ulangan userga tepadagi bir nechta 5ta yoki barcha mssagelarni korsatish mantiq
-    this.messagesList.push(newMessage);
-    if (this.messagesList.length > 5)
-      this.messagesList.splice(0, this.messagesList.length - 5);
-
-    this.emitMessage(newMessage);
-  }
-
-  private broadcastMessage(
-    sender: WebSocket,
-    message: InfoPayload | MessagePayload,
-  ) {
-    this.server.clients.forEach((client) => {
-      if (client !== sender && client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(message));
+  public async handleMessage(
+    client: WebSocket,
+    payload: unknown,
+  ): Promise<void> {
+    // Validate before storage without altering valid message text.
+    if (
+      typeof payload !== 'string' ||
+      !payload.trim() ||
+      payload.length > 2000
+    ) {
+      this.sendError(
+        client,
+        'INVALID_MESSAGE',
+        'Messages must contain 1-2,000 characters and cannot be blank.',
+      );
+      return;
+    }
+    await this.enqueue(async () => {
+      if (
+        !this.clientsAuthMap.has(client) ||
+        client.readyState !== WebSocket.OPEN
+      )
+        return;
+      const message: ChatMessage = {
+        event: 'message',
+        id: randomUUID(),
+        createdAt: new Date().toISOString(),
+        text: payload,
+        memberData: this.clientsAuthMap.get(client) ?? null,
+      };
+      try {
+        // A live echo confirms storage completed; failed saves never broadcast.
+        await this.historyService.appendMessage(message);
+      } catch {
+        this.logger.warn('Chat message save failed');
+        this.sendError(
+          client,
+          'MESSAGE_SAVE_FAILED',
+          'Message could not be confirmed saved.',
+        );
+        return;
       }
+      this.emitMessage(message);
     });
   }
 
-  private emitMessage(message: InfoPayload | MessagePayload) {
-    this.server.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
+  private sendError(client: WebSocket, code: string, message: string): void {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ event: 'error', code, message }));
+    }
+  }
+
+  private emitMessage(message: InfoPayload | ChatMessage): void {
+    // Include the sender to preserve the existing message echo behavior.
+    for (const client of this.clientsAuthMap.keys()) {
+      if (client.readyState === WebSocket.OPEN)
         client.send(JSON.stringify(message));
-      }
-    });
+    }
   }
 }
-
-/*
-Client faqat oziga  ==> client.send(JSON.stringify({ event: 'getMessags', list: this.messagesList })) 
-
-broadcast cliendan tashqari hammaga ==>   this.broadcastMessage(client, infoMsg)
-
-Emit barcha clientga serverda mavjud ==>    this.emitMessage(newMessage) 
-*/
