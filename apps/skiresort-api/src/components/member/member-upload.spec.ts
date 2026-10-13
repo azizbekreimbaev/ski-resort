@@ -20,7 +20,7 @@ const upload = (overrides: Partial<ImageUpload> = {}): ImageUpload => ({
 
 describe('Member image uploads', () => {
   let fixtureRoot: string;
-  const resolver = new MemberResolver({} as MemberService);
+  const resolver = new MemberResolver({} as MemberService, {} as never);
 
   beforeEach(async () => {
     fixtureRoot = await mkdtemp(join(tmpdir(), 'skiresort-upload-test-'));
@@ -41,11 +41,18 @@ describe('Member image uploads', () => {
     );
   });
 
-  it.each(['events', 'events/nested', 'EVENTS'])('reserves target %s for admin Event uploads', async (target) => {
-    await expect(resolver.imageUploader(upload(), target)).rejects.toThrow('uploadEventImages');
-    await expect(resolver.imagesUploader([Promise.resolve(upload())], target)).rejects.toThrow('uploadEventImages');
-    expect(await readdir(fixtureRoot)).toEqual([]);
-  });
+  it.each(['events', 'events/nested', 'EVENTS'])(
+    'reserves target %s for admin Event uploads',
+    async (target) => {
+      await expect(resolver.imageUploader(upload(), target)).rejects.toThrow(
+        'uploadEventImages',
+      );
+      await expect(
+        resolver.imagesUploader([Promise.resolve(upload())], target),
+      ).rejects.toThrow('uploadEventImages');
+      expect(await readdir(fixtureRoot)).toEqual([]);
+    },
+  );
 
   it('supports multi-upload with the same missing-directory repair', async () => {
     const urls = await resolver.imagesUploader(

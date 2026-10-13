@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import type { ObjectId } from 'mongoose';
 import { GraphQLUpload, FileUpload } from 'graphql-upload';
@@ -24,28 +24,48 @@ import {
   saveImageUpload,
 } from '../../libs/image-upload';
 import { InstructorProfileUpdate } from '../../libs/dto/member/instructor-profile.update';
+import { SessionService } from '../auth/session.service';
+import { assertSessionRequest } from '../auth/session.config';
+import type { SessionContext } from '../auth/session.config';
 
 @Resolver()
 export class MemberResolver {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(
+    private readonly memberService: MemberService,
+    private readonly sessionService: SessionService,
+  ) {}
 
   @Mutation(() => Member)
-  public async signup(@Args('input') input: MemberInput): Promise<Member> {
-    console.log('INPUT:::', input);
-    return await this.memberService.signup(input);
+  public async signup(
+    @Args('input') input: MemberInput,
+    @Context() context: SessionContext,
+  ): Promise<Member> {
+    assertSessionRequest(context.req);
+    const member = await this.memberService.signup(input);
+    await this.sessionService.create(member, context);
+    return member;
   }
 
   @Mutation(() => Member)
-  public async login(@Args('input') input: LoginInput): Promise<Member> {
-    console.log('MUTTATION LOGININPUT:::', input);
-    return await this.memberService.login(input);
+  public async login(
+    @Args('input') input: LoginInput,
+    @Context() context: SessionContext,
+  ): Promise<Member> {
+    assertSessionRequest(context.req);
+    const member = await this.memberService.login(input);
+    await this.sessionService.create(member, context);
+    return member;
   }
 
   @Mutation(() => Member)
   public async googleLogin(
     @Args('input') input: GoogleLoginInput,
+    @Context() context: SessionContext,
   ): Promise<Member> {
-    return await this.memberService.googleLogin(input);
+    assertSessionRequest(context.req);
+    const member = await this.memberService.googleLogin(input);
+    await this.sessionService.create(member, context);
+    return member;
   }
 
   @UseGuards(AuthGuard)

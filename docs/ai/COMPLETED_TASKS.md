@@ -1,5 +1,30 @@
 # Completed tasks and validation
 
+## Access-token and refresh-session renewal: 2026-10-13
+
+Implemented the approved session plan in the existing NestJS/GraphQL/Mongoose architecture. Configurable access JWTs default to 15 minutes; independent device refresh families expire absolutely after 30 days. `RefreshSession` stores SHA-256 hashes, member/expiry/revocation metadata and consumed hashes. Rotation is a conditional atomic single-document write; old-token reuse revokes that family. Public login/signup/Google login still return Member.accessToken and now set HttpOnly cookies. Added unguarded refreshToken/logout mutations, stable auth codes, explicit origin/CSRF checks and credentialed CORS allowlisting. Password updates now hash supplied strings and revoke sessions; successful BLOCK/DELETE updates revoke all member sessions. Sensitive authentication/global request-response logging was removed while retaining existing assistant/auth metadata categories.
+
+Read root AGENTS.md/SKILLS.md, current auth/guards/Firebase/member inputs/schema/services/resolvers/tests, configuration and relevant docs/ai history. The working tree was clean before edits. Current Google login source is authoritative despite historical cancellation text. This task did not initiate a whole-backend Nestar refactor. Updated decisions, migration documentation, authentication context and walkthrough; added [frontend handoff](AUTH_SESSION_HANDOFF.md). No memory file or applicable memory-update instruction was found.
+
+| Check | Result | Boundary |
+|---|---|---|
+| Baseline API no-emit compiler | Passed | Existing working tree, before implementation |
+| Baseline auth/member Jest | Passed: 5 suites, 53 tests | Fixture persistence/provider verification; no production services |
+| Full Jest suite | Passed: 38 suites, 656 tests; 2 integration suites/8 tests skipped | Includes real isolated HTTP GraphQL/JWT/guards/cookies, existing domain regressions and mocked Firebase/Mongoose |
+| Final guard/GraphQL regressions | Passed: 3 suites, 65 tests | After final bearer-header type narrowing |
+| API and batch no-emit TypeScript | Passed | API checked again after final guard changes |
+| API and batch production builds | Passed | Bundles only; no application/scheduler start |
+| New session source/specs, new error formatter and logging interceptor ESLint | Passed: zero diagnostics | Check-only lint; no rule suppression |
+| All changed TypeScript ESLint | 55 errors, 6 warnings in legacy files | Original HEAD contents of those same files had 70 errors, 8 warnings; inherited unsafe typing/style debt remains |
+| Changed TypeScript Prettier check | Passed | Scoped formatting was explicitly approved by the user after automatic review initially rejected --write |
+| Git patch whitespace | Passed | No commit, reset or history change |
+
+Commands used the installed local `C:/Program Files/nodejs/node.exe` v20.19.0 because node/npm/npx were absent from the shell PATH: `node_modules/jest/bin/jest.js --runInBand --silent`, `node_modules/typescript/bin/tsc --noEmit --incremental false -p apps/skiresort-api/tsconfig.app.json` (and batch equivalent), `node_modules/@nestjs/cli/bin/nest.js build skiresort` / `skiresort-batch`, `node_modules/eslint/bin/eslint.js <changed files>` without fixes, and `node_modules/prettier/bin/prettier.cjs --check <changed files>`. Baseline lint comparison piped `git show HEAD:<path>` to ESLint stdin with the real filename; it did not restore/write original files.
+
+New tests cover each login entry point → refresh → protected request; hash-only persistence and cookie attributes; absolute expiry; missing/malformed/unknown/expired/revoked tokens; logout and post-logout renewal; blocked/deleted members; multiple-device isolation; old-token reuse and concurrent CAS rotation; password hashing/all-session revocation; CSRF rejection; stable expiration/permission errors; and safe logging. Broader regressions initially identified expected auth-error assertion updates, isolated SocketModule model/config fixtures and preserved assistant logging categories; these were corrected and the full suite passed. No unrelated domain implementation was changed.
+
+Not run: opt-in real MongoDB rotation test (no explicit SKIRESORT_TEST_MONGO_URI), live Google identity verification, full AppModule bootstrap against a database, production/index rollout or frontend integration. The new integration suite creates a uniquely named disposable database only on an explicitly supplied test server. No local .env values, database records, installed indexes, dependencies, frontend files, infrastructure or deployment settings were changed; no commit was made. A narrow .gitignore exception makes the requested new handoff visible for review; other ignored AI documents remain ignored. Production must configure exact HTTPS origins and verify the new collection/index permissions. Strict rotation requires frontend single-flight and cross-tab coordination; already-issued JWTs retain their original expiry.
+
 ## Google authentication cancelled: 2026-10-07
 
 At the user's request, removed the Google authentication implementation, onboarding schema/DTOs, tests, handoff and feature-only memory file. Restored the pre-feature authentication/schema/wiring, dependency lockfile, example configuration, source manifest and other migration documents. Removed only GOOGLE_CLIENT_ID from the ignored local `.env`; unrelated configuration and existing nickname/password authentication are preserved. No live database/index operations, frontend edits, deployment or commit.

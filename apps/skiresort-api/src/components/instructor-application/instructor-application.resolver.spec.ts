@@ -105,7 +105,7 @@ describe('Instructor GraphQL authorization and identity forwarding', () => {
         getHandler: () => method('createInstructorApplication'),
         getArgByIndex: () => ({ req: { headers: {}, body: {} } }),
       }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toMatchObject({ extensions: { code: 'ACCESS_TOKEN_MISSING' } });
     expect(verifyAuth).not.toHaveBeenCalled();
   });
 

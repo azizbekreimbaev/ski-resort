@@ -43,6 +43,7 @@ import { InstructorProfileUpdate } from '../../libs/dto/member/instructor-profil
 import { InstructorApplication } from '../../libs/dto/instructor-application/instructor-application';
 import { InstructorApplicationStatus } from '../../libs/enums/instructor-application.enum';
 import { ResortService } from '../resort/resort.service';
+import { SessionService } from '../auth/session.service';
 
 @Injectable()
 export class MemberService {
@@ -55,6 +56,7 @@ export class MemberService {
     private likeService: LikeService,
     private resortService: ResortService,
     private firebaseService: FirebaseService,
+    private sessionService: SessionService,
   ) {}
 
   public async signup(input: MemberInput): Promise<Member> {
@@ -73,13 +75,8 @@ export class MemberService {
 
       // AUTHENTICATION TOKENS
       result.accessToken = await this.authService.createToken(result);
-      console.log('accessToken', result);
       return result;
-    } catch (err) {
-      console.log(
-        'ERROR on signup service model',
-        err instanceof Error ? err.message : err,
-      );
+    } catch {
       throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
     }
   }
@@ -116,7 +113,6 @@ export class MemberService {
 
       return result;
     } catch (err) {
-      console.log('ERROR on login service model', err);
       throw new BadRequestException(err);
     }
   }
@@ -186,14 +182,19 @@ export class MemberService {
         throw new ForbiddenException(Message.NOT_ALLOWED_REQUEST);
       }
     }
+    const values = this.generalProfileFields(input);
+    if (typeof input.memberPassword === 'string')
+      values.memberPassword = await this.authService.hashPassword(
+        input.memberPassword,
+      );
     const result: Member | null = await this.memberModel.findOneAndUpdate(
       { _id: memberId, memberStatus: MemberStatus.ACTIVE },
-      this.generalProfileFields(input),
+      values,
       { new: true },
     );
 
     if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
+    await this.revokeChangedMemberSessions(result, input);
     result.accessToken = await this.authService.createToken(result);
 
     return result;
@@ -382,6 +383,10 @@ export class MemberService {
   public async updateMemberByAdmin(input: MemberUpdate): Promise<Member> {
     const match: Record<string, unknown> = { _id: input._id };
     const values = this.generalProfileFields(input);
+    if (typeof input.memberPassword === 'string')
+      values.memberPassword = await this.authService.hashPassword(
+        input.memberPassword,
+      );
     if (input.memberType !== undefined) {
       const current = await this.memberModel.findOne({ _id: input._id }).exec();
       if (!current)
@@ -405,7 +410,7 @@ export class MemberService {
       .exec();
 
     if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
-
+    await this.revokeChangedMemberSessions(result, input);
     return result;
   }
 
@@ -489,6 +494,24 @@ export class MemberService {
       throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
     result.accessToken = await this.authService.createToken(result);
     return result;
+  }
+
+  private async revokeChangedMemberSessions(
+    member: Member,
+    input: MemberUpdate,
+  ): Promise<void> {
+    if (
+      input.memberPassword !== undefined ||
+      input.memberStatus === MemberStatus.BLOCK ||
+      input.memberStatus === MemberStatus.DELETE
+    ) {
+      await this.sessionService.revokeMember(
+        member._id,
+        input.memberPassword !== undefined
+          ? 'password_changed'
+          : 'member_inactive',
+      );
+    }
   }
 
   private generalProfileFields(input: MemberUpdate): Record<string, unknown> {

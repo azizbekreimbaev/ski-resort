@@ -1,5 +1,13 @@
 # SkiResort backend code walkthrough
 
+## Scoped session renewal: 2026-10-13
+
+Current authentication now includes refresh sessions. `components/auth/session.config.ts` owns token lifetimes, cookie settings and browser request checks; `schemas/RefreshSession.model.ts` persists each device family and hashed rotation history. `SessionResolver.refreshToken`/`logout` delegate to `SessionService`, which checks current member state and uses a conditional single-document update for rotation. AuthModule registers both models and exports SessionService; MemberModule already imports AuthModule, so no module cycle is added.
+
+`MemberResolver.signup`, `login` and `googleLogin` keep existing Member responses, validate browser session requests and create a cookie after successful authentication. `MemberService.updateMember` and `updateMemberByAdmin` now hash newly supplied string passwords and revoke all refresh sessions on successful password/BLOCK/DELETE updates. `AuthService` signs short-lived JWTs and distinguishes access expiration from invalid tokens. Existing guards/role permissions and optional guest fallback remain, with stable authentication error codes.
+
+See [complete file roles, request flow, contracts and frontend integration](../ai/AUTH_SESSION_HANDOFF.md). Earlier walkthrough statements about 30-day access tokens or absent refresh/logout describe historical code. This scoped feature is not a new whole-backend parity audit.
+
 ## Current source review and attribution
 
 The newly authorized pass starts from the existing working tree, which already contains the earlier refactor described below. Those historical changes were preserved. Current full-read inventories, exact contracts and additional request traces are in [AUDIT_INFRASTRUCTURE.md](AUDIT_INFRASTRUCTURE.md), [AUDIT_AUTH_MEMBER.md](AUDIT_AUTH_MEMBER.md), [AUDIT_SOCIAL.md](AUDIT_SOCIAL.md), and [AUDIT_DOMAINS.md](AUDIT_DOMAINS.md). The attempted four-file search/inquiry refactor was restored because independent checks found changed GraphQL error order. No additional application source edits remain from this pass. Current-pass results are recorded separately in the parity plan.

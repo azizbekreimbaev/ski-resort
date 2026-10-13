@@ -44,6 +44,7 @@ describe('Google login', () => {
       {} as never,
       {} as never,
       firebase,
+      {} as never,
     );
   });
 

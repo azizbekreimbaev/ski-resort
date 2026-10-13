@@ -1,5 +1,9 @@
 # Authentication and authorization
 
+## Session renewal update: 2026-10-13
+
+The scoped authentication update supersedes the historical JWT/password/logging statements below: configurable 15-minute access tokens, absolute 30-day hashed refresh sessions, atomic rotation/reuse revocation, HttpOnly cookies, CSRF/origin checks, refreshToken/logout mutations and member-session revocation are implemented locally. String password updates are bcrypt-hashed. See [current authentication handoff](../docs/ai/AUTH_SESSION_HANDOFF.md) and [fresh verification](../docs/ai/COMPLETED_TASKS.md). Already-issued JWTs retain their original expiry. Historical findings below are not a claim that unrelated issues were fixed.
+
 ## Member/Instructor phase update: 2026-10-04
 
 Signup preserves optional MemberInput.memberType but rejects ADMIN/INSTRUCTOR/null before hash/create; USER/omission work normally. Self-update prohibits role changes. Generic admin updates cannot promote to INSTRUCTOR or reassign an Instructor. Only transactional ADMIN approval promotes ACTIVE USER. Final roles: USER/ADMIN/INSTRUCTOR. No separate trusted public admin creation was found or added.

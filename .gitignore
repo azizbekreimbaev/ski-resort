@@ -17,6 +17,9 @@ docs
 !/docs/
 /docs/*
 !/docs/backend-refactor/
+!/docs/ai/
+/docs/ai/*
+!/docs/ai/AUTH_SESSION_HANDOFF.md
 # OS
 .DS_Store
 

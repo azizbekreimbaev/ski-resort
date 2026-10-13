@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
@@ -7,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from '../auth.service';
 import { Message } from '../../../libs/enums/common.enum';
+import { authError } from '../session.config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -17,10 +17,14 @@ export class AuthGuard implements CanActivate {
 
     if (context.contextType === 'graphql') {
       const request = context.getArgByIndex(2).req;
-      console.log('REQUEST', request.headers);
 
-      const bearerToken = request.headers.authorization;
-      if (!bearerToken) throw new BadRequestException(Message.TOKEN_NOT_EXIST);
+      const bearerToken: unknown = request.headers.authorization;
+      if (!bearerToken) throw authError('ACCESS_TOKEN_MISSING');
+      if (
+        typeof bearerToken !== 'string' ||
+        !/^Bearer [^\s]+$/i.test(bearerToken)
+      )
+        throw authError('ACCESS_TOKEN_INVALID');
 
       const token = bearerToken.split(' ')[1],
         authMember = await this.authService.verifyAuth(token);

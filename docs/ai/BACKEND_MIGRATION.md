@@ -1,5 +1,13 @@
 # Backend migration: Nestar → SkiResort
 
+## Authentication session renewal: 2026-10-13
+
+Added configurable 15-minute access JWTs and absolute 30-day refresh sessions, preserving successful login/signup/Google login Member.accessToken contracts. A dedicated refreshSessions collection stores hashes only and atomically rotates each device family. New unguarded GraphQL mutations are refreshToken and logout. Strict old-token reuse revokes the family; blocked/deleted members cannot refresh. Successful password/status updates revoke all affected member sessions; newly supplied string passwords are bcrypt-hashed.
+
+Browser integration now requires credentialed requests, X-CSRF-Protection: 1 and a configured origin. Development frontend is localhost:3000 and API is localhost:3007/graphql. Production requires an explicit HTTPS origin allowlist. Cookies are HttpOnly, SameSite=Lax, Secure in production and scoped to /graphql. Access expiration and permission errors have separate stable codes; optional authentication remains guest-compatible. Existing access JWTs remain valid until their original expiry.
+
+See [frontend contracts and integration steps](AUTH_SESSION_HANDOFF.md), [decisions](DECISIONS.md) and [validation](COMPLETED_TASKS.md). Current Google login source is authoritative; earlier cancellation/30-day-token documentation is historical. No frontend, live database/index operation, deployment, dependency change or commit.
+
 ## Previous-project socket chat restored: 2026-10-07
 
 Copied the previous project's SocketModule and SocketGateway exactly, adding AuthModule injection, query-token identity with guest fallback, join/leave member events and five-message in-memory history. Existing native WsAdapter/root-path wiring is retained. See [frontend socket handoff](SOCKET_CHAT_HANDOFF.md) for exact frames and preserved limits. No frontend, persistence, live data or deployment change.

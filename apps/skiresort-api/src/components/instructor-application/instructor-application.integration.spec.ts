@@ -58,6 +58,7 @@ integration('Instructor lifecycle isolated MongoDB integration', () => {
       {} as never,
       resorts as never,
       {} as never,
+      {} as never,
     );
     service = new InstructorApplicationService(
       applications,

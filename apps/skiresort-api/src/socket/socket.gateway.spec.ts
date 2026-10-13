@@ -5,6 +5,8 @@ import { IncomingMessage, Server as HttpServer } from 'http';
 import { AddressInfo } from 'net';
 import WebSocket, { Server } from 'ws';
 import { AuthService } from '../components/auth/auth.service';
+import { getModelToken } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { ChatHistoryService } from './chat-history.service';
 import { ChatMessage } from './chat-message';
 import { SocketGateway } from './socket.gateway';
@@ -323,6 +325,12 @@ describe('Durable shared chat', () => {
 
   it('wires SocketModule and preserves the native WsAdapter envelope', async () => {
     const module = await Test.createTestingModule({ imports: [SocketModule] })
+      .overrideProvider(getModelToken('Member'))
+      .useValue({})
+      .overrideProvider(getModelToken('RefreshSession'))
+      .useValue({})
+      .overrideProvider(ConfigService)
+      .useValue({ get: () => 'isolated-test-key' })
       .overrideProvider(AuthService)
       .useValue({ verifyAuth })
       .overrideProvider(ChatHistoryService)

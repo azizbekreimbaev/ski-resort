@@ -164,9 +164,9 @@ describe('Resort requests through the existing guards', () => {
     );
     const { context } = requestContext('createResort');
 
-    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(guard.canActivate(context)).rejects.toMatchObject({
+      extensions: { code: 'ACCESS_TOKEN_MISSING' },
+    });
     expect(authService.verifyAuth).not.toHaveBeenCalled();
   });
 
@@ -222,9 +222,9 @@ describe('Resort requests through the existing guards', () => {
     const guard = new AuthGuard(authService as unknown as AuthService);
     const { context } = requestContext('likeTargetResort');
 
-    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(guard.canActivate(context)).rejects.toMatchObject({
+      extensions: { code: 'ACCESS_TOKEN_MISSING' },
+    });
   });
 
   it('accepts an authenticated user for resort likes', async () => {

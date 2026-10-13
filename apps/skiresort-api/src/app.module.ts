@@ -7,8 +7,9 @@ import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
 import { ComponentsModule } from './components/components.module';
 import { DatabaseModule } from './database/database.module';
-import { T } from './libs/types/common';
+import { formatGraphQLError } from './libs/graphql-error';
 import { SocketModule } from './socket/socket.module';
+import type { SessionContext } from './components/auth/session.config';
 
 @Module({
   imports: [
@@ -18,17 +19,9 @@ import { SocketModule } from './socket/socket.module';
       playground: true,
       uploads: true,
       autoSchemaFile: true,
-      formatError: (errors: T) => {
-        const graphQLFormattedError = {
-          extensions: { code: errors?.extensions?.code }, // BOSHQA YAXSHIROQ VARIANT TOPILMADI
-          message:
-            errors?.extensions?.exception?.response?.message ||
-            errors?.extensions?.response?.message ||
-            errors?.message,
-        };
-        console.log('GRAPHQL GLOBAL ERROR', graphQLFormattedError);
-        return graphQLFormattedError;
-      },
+      csrfPrevention: true,
+      context: ({ req, res }: SessionContext) => ({ req, res }),
+      formatError: formatGraphQLError,
     }),
     ComponentsModule,
     DatabaseModule,

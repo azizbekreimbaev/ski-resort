@@ -44,6 +44,7 @@ describe('Member instructor workflow and compatibility', () => {
   >;
   let resorts: { assertVisibleResort: jest.Mock<any, unknown[]> };
   let service: MemberService;
+  let sessions: { revokeMember: jest.Mock };
 
   beforeEach(() => {
     current = {
@@ -72,6 +73,7 @@ describe('Member instructor workflow and compatibility', () => {
     resorts = {
       assertVisibleResort: jest.fn<any, unknown[]>().mockResolvedValue({}),
     };
+    sessions = { revokeMember: jest.fn().mockResolvedValue(undefined) };
     service = new MemberService(
       model as unknown as ConstructorParameters<typeof MemberService>[0],
       {} as ConstructorParameters<typeof MemberService>[1],
@@ -80,6 +82,7 @@ describe('Member instructor workflow and compatibility', () => {
       {} as ConstructorParameters<typeof MemberService>[4],
       resorts as unknown as ConstructorParameters<typeof MemberService>[5],
       {} as ConstructorParameters<typeof MemberService>[6],
+      sessions as never,
     );
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
   });
@@ -157,6 +160,54 @@ describe('Member instructor workflow and compatibility', () => {
       { new: true },
     );
     expect(current.accessToken).toBe('token');
+  });
+
+  it.each(['self', 'admin'])(
+    'hashes %s password changes and revokes all refresh sessions',
+    async (actor) => {
+      const input = {
+        _id: memberId.toHexString(),
+        memberPassword: 'new-password',
+      };
+      if (actor === 'self')
+        await service.updateMember(memberId as never, input);
+      else await service.updateMemberByAdmin(input);
+      expect(auth.hashPassword).toHaveBeenCalledWith('new-password');
+      expect(model.findOneAndUpdate.mock.calls[0][1]).toEqual({
+        memberPassword: 'hash',
+      });
+      expect(sessions.revokeMember).toHaveBeenCalledWith(
+        memberId,
+        'password_changed',
+      );
+    },
+  );
+
+  it.each([MemberStatus.BLOCK, MemberStatus.DELETE])(
+    'revokes all refresh sessions when an admin sets %s',
+    async (memberStatus) => {
+      await service.updateMemberByAdmin({
+        _id: memberId.toHexString(),
+        memberStatus,
+      });
+      expect(sessions.revokeMember).toHaveBeenCalledWith(
+        memberId,
+        'member_inactive',
+      );
+    },
+  );
+
+  it('does not revoke on failed updates or ordinary profile changes', async () => {
+    await service.updateMember(memberId as never, { memberDesc: 'bio' });
+    expect(sessions.revokeMember).not.toHaveBeenCalled();
+    model.findOneAndUpdate.mockReturnValue(query(null));
+    await expect(
+      service.updateMemberByAdmin({
+        _id: memberId.toHexString(),
+        memberStatus: MemberStatus.BLOCK,
+      }),
+    ).rejects.toThrow();
+    expect(sessions.revokeMember).not.toHaveBeenCalled();
   });
 
   it.each([MemberType.INSTRUCTOR, MemberType.ADMIN, null])(
