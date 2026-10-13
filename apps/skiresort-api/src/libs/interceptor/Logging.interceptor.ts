@@ -30,6 +30,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
       const info = gqlContext.getInfo<GraphQLResolveInfo>();
       let assistantOperation = info.fieldName === 'askAssistant';
+      let googleOperation = info.fieldName === 'googleLogin';
       for (const node of [
         info.operation,
         ...Object.values(info.fragments ?? {}),
@@ -39,21 +40,22 @@ export class LoggingInterceptor implements NestInterceptor {
             Field: (field) => {
               if (field.name.value === 'askAssistant')
                 assistantOperation = true;
+              if (field.name.value === 'googleLogin') googleOperation = true;
             },
           });
       }
-      if (assistantOperation) {
+      if (assistantOperation || googleOperation) {
         return next.handle().pipe(
           tap({
             next: () =>
               this.logger.log(
                 `${info.fieldName} success ${Date.now() - recordTime}ms`,
-                'ASSISTANT',
+                googleOperation ? 'AUTH' : 'ASSISTANT',
               ),
             error: () =>
               this.logger.log(
                 `${info.fieldName} error ${Date.now() - recordTime}ms`,
-                'ASSISTANT',
+                googleOperation ? 'AUTH' : 'ASSISTANT',
               ),
           }),
         );

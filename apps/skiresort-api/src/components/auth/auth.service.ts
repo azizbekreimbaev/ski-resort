@@ -28,6 +28,7 @@ export class AuthService {
       payload[`${ele}`] = member[`${ele}`];
     });
     delete payload.memberPassword;
+    delete payload.firebaseUid;
     console.log('member===', payload);
 
     return await this.jwtService.signAsync(payload);

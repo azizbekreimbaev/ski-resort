@@ -79,6 +79,7 @@ describe('Member instructor workflow and compatibility', () => {
       {} as ConstructorParameters<typeof MemberService>[3],
       {} as ConstructorParameters<typeof MemberService>[4],
       resorts as unknown as ConstructorParameters<typeof MemberService>[5],
+      {} as ConstructorParameters<typeof MemberService>[6],
     );
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
   });

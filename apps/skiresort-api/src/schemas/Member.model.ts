@@ -42,7 +42,15 @@ const MemberSchema = new Schema(
     memberPassword: {
       type: String,
       select: false,
-      required: true,
+      required: function (this: { firebaseUid?: string }) {
+        return !this.firebaseUid;
+      },
+    },
+
+    firebaseUid: {
+      type: String,
+      select: false,
+      index: { unique: true, sparse: true },
     },
 
     memberFullName: {

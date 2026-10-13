@@ -6,6 +6,7 @@ import { MemberService } from './member.service';
 import {
   InstructorsInquiry,
   LoginInput,
+  GoogleLoginInput,
   MemberInput,
   MembersInquiry,
 } from '../../libs/dto/member/member.input';
@@ -38,6 +39,13 @@ export class MemberResolver {
   public async login(@Args('input') input: LoginInput): Promise<Member> {
     console.log('MUTTATION LOGININPUT:::', input);
     return await this.memberService.login(input);
+  }
+
+  @Mutation(() => Member)
+  public async googleLogin(
+    @Args('input') input: GoogleLoginInput,
+  ): Promise<Member> {
+    return await this.memberService.googleLogin(input);
   }
 
   @UseGuards(AuthGuard)

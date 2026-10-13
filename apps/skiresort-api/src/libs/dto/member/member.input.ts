@@ -1,5 +1,12 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsIn, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+  Min,
+} from 'class-validator';
 import {
   MemberAuthType,
   MemberStatus,
@@ -31,6 +38,26 @@ export class MemberInput {
   @IsOptional()
   @Field(() => MemberAuthType, { nullable: true })
   memberAuthType?: MemberAuthType;
+}
+
+@InputType()
+export class GoogleLoginInput {
+  @IsString()
+  @IsNotEmpty()
+  @Field(() => String)
+  idToken!: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(3, 12)
+  @Field(() => String, { nullable: true })
+  memberNick?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @Field(() => String, { nullable: true })
+  memberPhone?: string;
 }
 
 @InputType()

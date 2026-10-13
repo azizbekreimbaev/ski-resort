@@ -12,10 +12,16 @@ import { Member, Members } from '../../libs/dto/member/member';
 import {
   InstructorsInquiry,
   LoginInput,
+  GoogleLoginInput,
   MemberInput,
   MembersInquiry,
 } from '../../libs/dto/member/member.input';
-import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
+import {
+  MemberAuthType,
+  MemberStatus,
+  MemberType,
+} from '../../libs/enums/member.enum';
+import { FirebaseService } from '../auth/firebase.service';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { AuthService } from '../auth/auth.service';
 import { MemberUpdate } from '../../libs/dto/member/member.update';
@@ -47,6 +53,7 @@ export class MemberService {
     private viewService: ViewService,
     private likeService: LikeService,
     private resortService: ResortService,
+    private firebaseService: FirebaseService,
   ) {}
 
   public async signup(input: MemberInput): Promise<Member> {
@@ -92,6 +99,10 @@ export class MemberService {
 
       // BSCRYPT COMPARING PASSWORD
 
+      if (!result.memberPassword) {
+        throw new BadRequestException('GOOGLE_LOGIN_REQUIRED');
+      }
+
       const isMatch = await this.authService.comparePasswords(
         input.memberPassword,
         result.memberPassword,
@@ -107,6 +118,63 @@ export class MemberService {
       console.log('ERROR on login service model', err);
       throw new BadRequestException(err);
     }
+  }
+
+  public async googleLogin(input: GoogleLoginInput): Promise<Member> {
+    const identity = await this.firebaseService.verifyGoogleToken(
+      input.idToken,
+    );
+    let member = await this.memberModel
+      .findOne({ firebaseUid: identity.uid })
+      .exec();
+
+    if (!member) {
+      if (!input.memberNick?.trim() || !input.memberPhone?.trim()) {
+        throw new BadRequestException('GOOGLE_PROFILE_REQUIRED');
+      }
+      if (
+        input.memberNick.trim().length < 3 ||
+        input.memberNick.trim().length > 12
+      ) {
+        throw new BadRequestException('INVALID_MEMBER_NICK');
+      }
+      try {
+        const created = await this.memberModel.create<Partial<Member>>({
+          firebaseUid: identity.uid,
+          memberAuthType: MemberAuthType.GOOGLE,
+          memberType: MemberType.USER,
+          memberNick: input.memberNick.trim(),
+          memberPhone: input.memberPhone.trim(),
+          memberFullName:
+            typeof identity.name === 'string' ? identity.name : undefined,
+          memberImage: identity.picture ?? '',
+        });
+        member = created;
+      } catch (error: unknown) {
+        if (
+          typeof error !== 'object' ||
+          error === null ||
+          !('code' in error) ||
+          error.code !== 11000
+        )
+          throw error;
+        member = await this.memberModel
+          .findOne({ firebaseUid: identity.uid })
+          .exec();
+        if (!member) {
+          throw new ConflictException(Message.USED_MEMBER_NICK_OR_PHONE);
+        }
+      }
+    }
+
+    if (member.memberStatus === MemberStatus.BLOCK) {
+      throw new ForbiddenException(Message.BLOCKED_USER);
+    }
+    if (member.memberStatus === MemberStatus.DELETE) {
+      throw new ForbiddenException(Message.NO_MEMBER_NICK);
+    }
+    member.accessToken = await this.authService.createToken(member);
+    return member;
   }
 
   public async updateMember(

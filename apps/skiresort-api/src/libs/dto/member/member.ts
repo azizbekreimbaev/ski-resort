@@ -31,6 +31,7 @@ export class Member {
   memberNick!: string;
 
   memberPassword?: string;
+  firebaseUid?: string;
 
   @Field(() => String, { nullable: true })
   memberFullName?: string;
