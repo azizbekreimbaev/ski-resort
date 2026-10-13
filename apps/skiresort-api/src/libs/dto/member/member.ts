@@ -24,8 +24,8 @@ export class Member {
   @Field(() => MemberAuthType)
   memberAuthType!: MemberAuthType;
 
-  @Field(() => String)
-  memberPhone!: string;
+  @Field(() => String, { nullable: true })
+  memberPhone?: string;
 
   @Field(() => String)
   memberNick!: string;

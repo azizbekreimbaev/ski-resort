@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import { ObjectId } from 'mongoose';
+import { randomBytes } from 'crypto';
 import { Member, Members } from '../../libs/dto/member/member';
 import {
   InstructorsInquiry,
@@ -129,13 +130,9 @@ export class MemberService {
       .exec();
 
     if (!member) {
-      if (!input.memberNick?.trim() || !input.memberPhone?.trim()) {
-        throw new BadRequestException('GOOGLE_PROFILE_REQUIRED');
-      }
-      if (
-        input.memberNick.trim().length < 3 ||
-        input.memberNick.trim().length > 12
-      ) {
+      const memberNick =
+        input.memberNick?.trim() || `g_${randomBytes(5).toString('hex')}`;
+      if (memberNick.length < 3 || memberNick.length > 12) {
         throw new BadRequestException('INVALID_MEMBER_NICK');
       }
       try {
@@ -143,8 +140,8 @@ export class MemberService {
           firebaseUid: identity.uid,
           memberAuthType: MemberAuthType.GOOGLE,
           memberType: MemberType.USER,
-          memberNick: input.memberNick.trim(),
-          memberPhone: input.memberPhone.trim(),
+          memberNick,
+          memberPhone: input.memberPhone?.trim() || undefined,
           memberFullName:
             typeof identity.name === 'string' ? identity.name : undefined,
           memberImage: identity.picture ?? '',

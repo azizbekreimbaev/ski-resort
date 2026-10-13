@@ -30,7 +30,9 @@ const MemberSchema = new Schema(
     memberPhone: {
       type: String,
       index: { unique: true, sparse: true },
-      required: true,
+      required: function (this: { firebaseUid?: string }) {
+        return !this.firebaseUid;
+      },
     },
 
     memberNick: {

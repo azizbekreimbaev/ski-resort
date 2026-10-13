@@ -40,7 +40,7 @@ describe('Google login GraphQL contract', () => {
       ).getFields();
       expect(member.firebaseUid).toBeUndefined();
       expect(member.memberPassword).toBeUndefined();
-      expect(member.memberPhone.type.toString()).toBe('String!');
+      expect(member.memberPhone.type.toString()).toBe('String');
     } finally {
       await moduleRef.close();
     }

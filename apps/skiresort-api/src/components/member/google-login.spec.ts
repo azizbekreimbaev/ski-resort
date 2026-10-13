@@ -58,14 +58,22 @@ describe('Google login', () => {
     expect(memberModel.create).not.toHaveBeenCalled();
   });
 
-  it('requires profile completion before creating a member', async () => {
+  it('creates a member with token only and no phone number', async () => {
     memberModel.findOne.mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
     });
-    await expect(service.googleLogin({ idToken: 'token' })).rejects.toThrow(
-      'GOOGLE_PROFILE_REQUIRED',
+    await expect(
+      service.googleLogin({ idToken: 'token' }),
+    ).resolves.toMatchObject({
+      accessToken: 'skiresort-token',
+    });
+    expect(memberModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firebaseUid: identity.uid,
+        memberNick: expect.stringMatching(/^g_[a-f0-9]{10}$/),
+        memberPhone: undefined,
+      }),
     );
-    expect(memberModel.create).not.toHaveBeenCalled();
   });
 
   it('creates a USER with verified identity and no invented password', async () => {
@@ -147,5 +155,17 @@ describe('Google login', () => {
     expect(
       new MemberModel({ ...profile, firebaseUid: identity.uid }).validateSync(),
     ).toBeUndefined();
+    expect(
+      new MemberModel({
+        memberNick: 'google',
+        firebaseUid: identity.uid,
+      }).validateSync(),
+    ).toBeUndefined();
+    expect(
+      new MemberModel({
+        memberNick: 'local',
+        memberPassword: 'password',
+      }).validateSync()?.errors.memberPhone,
+    ).toBeDefined();
   });
 });
