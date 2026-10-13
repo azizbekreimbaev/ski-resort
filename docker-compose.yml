@@ -13,7 +13,7 @@ services:
       - skiresort-api-dist:/usr/src/skiresort/dist
     working_dir: /usr/src/skiresort
     environment:
-      PORT_API: 3000
+      PORT_API: 3007
 
     networks:
       - monorepo-network
@@ -38,7 +38,7 @@ services:
       - skiresort-batch-dist:/usr/src/skiresort/dist
     working_dir: /usr/src/skiresort
     environment:
-      PORT_BATCH: 3001
+      PORT_BATCH: 3008
 
     networks:
       - monorepo-network
